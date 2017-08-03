@@ -1,0 +1,4 @@
+project=RMDC_DW
+table=odps_ebank_detail
+columns=id:STRING,open_id:STRING,person_id:BIGINT,bill_info:STRING,bill_record:STRING,bank_name:STRING,account_info:STRING,id_card:STRING,update_time:STRING,type:STRING,create_time:STRING
+partitions=pt:STRING
