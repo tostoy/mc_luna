@@ -1,0 +1,4 @@
+--name:odps_test
+--author:Administrator
+--create time:2017-08-05 14:29
+select * from (select id, user_id,created_at, row_number() over(partition by user_id order by created_at) from odps_loan_collection_order) b where b.user_id  = 3915265;

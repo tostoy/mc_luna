@@ -4,9 +4,10 @@ import com.aliyun.odps.udf.ExecutionContext;
 import com.aliyun.odps.udf.UDFException;
 import com.aliyun.odps.udf.UDTF;
 import com.aliyun.odps.udf.annotation.Resolve;
+import com.jayway.jsonpath.JsonPath;
+
 
 import java.util.List;
-import java.io.FileInputStream;
 
 // TODO define input and output types, e.g. "string,string->string,bigint".
 @Resolve({"bigint,string->bigint,string"})
@@ -26,7 +27,7 @@ public class UDTFHello extends UDTF {
         List<Object> x= null;
         if(b !=null && !b.equals("null")){
             try {
-                x = com.jayway.jsonpath.JsonPath.read(b, "$.card_list..card_no");
+                x = JsonPath.read(b, "$.card_list..card_no");
 
             }catch(Exception e){
 
