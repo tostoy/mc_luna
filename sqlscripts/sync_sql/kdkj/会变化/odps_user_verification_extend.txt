@@ -1,0 +1,75 @@
+-- 创建目标表
+CREATE TABLE odps_user_verification_extend LIKE odps_user_verification_extend_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_verification_extend PARTITION (pt)
+SELECT 
+id, user_id, real_accumulation_fund, real_social_security, real_status, updated_at, created_at, golden_tag, is_white, card_type, authentication_a, authentication_b, authentication_c, authentication_d, authentication_e, authentication_f, authentication_h, authentication_i, authentication_j, authentication_k, real_credit_card, real_card_bill_online, real_card_bill_email, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_verification_extend_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_verification_extend_tmp;
+SELECT COUNT(*) FROM  odps_user_verification_extend;
+
+--- 创建增量表
+CREATE TABLE odps_user_verification_extend_inc LIKE odps_user_verification_extend;
+
+--- 删除历史表
+ALTER TABLE odps_user_verification_extend_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_verification_extend PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.real_accumulation_fund ELSE a.real_accumulation_fund END AS real_accumulation_fund,
+	CASE WHEN b.id IS NOT NULL THEN b.real_social_security ELSE a.real_social_security END AS real_social_security,
+	CASE WHEN b.id IS NOT NULL THEN b.real_status ELSE a.real_status END AS real_status,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.golden_tag ELSE a.golden_tag END AS golden_tag,
+	CASE WHEN b.id IS NOT NULL THEN b.is_white ELSE a.is_white END AS is_white,
+	CASE WHEN b.id IS NOT NULL THEN b.card_type ELSE a.card_type END AS card_type,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_a ELSE a.authentication_a END AS authentication_a,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_b ELSE a.authentication_b END AS authentication_b,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_c ELSE a.authentication_c END AS authentication_c,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_d ELSE a.authentication_d END AS authentication_d,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_e ELSE a.authentication_e END AS authentication_e,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_f ELSE a.authentication_f END AS authentication_f,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_h ELSE a.authentication_h END AS authentication_h,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_i ELSE a.authentication_i END AS authentication_i,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_j ELSE a.authentication_j END AS authentication_j,
+	CASE WHEN b.id IS NOT NULL THEN b.authentication_k ELSE a.authentication_k END AS authentication_k,
+	CASE WHEN b.id IS NOT NULL THEN b.real_credit_card ELSE a.real_credit_card END AS real_credit_card,
+	CASE WHEN b.id IS NOT NULL THEN b.real_card_bill_online ELSE a.real_card_bill_online END AS real_card_bill_online,
+	CASE WHEN b.id IS NOT NULL THEN b.real_card_bill_email ELSE a.real_card_bill_email END AS real_card_bill_email,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_verification_extend a 
+FULL OUTER JOIN odps_user_verification_extend_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_verification_extend_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, real_accumulation_fund, real_social_security, real_status, updated_at, created_at, golden_tag, is_white, card_type, authentication_a, authentication_b, authentication_c, authentication_d, authentication_e, authentication_f, authentication_h, authentication_i, authentication_j, authentication_k, real_credit_card, real_card_bill_online, real_card_bill_email
+FROM odps_user_verification_extend_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_verification_extend_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_verification_extend_kz_${bdp.system.bizdate} LIKE odps_user_verification_extend;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_verification_extend_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, real_accumulation_fund, real_social_security, real_status, updated_at, created_at, golden_tag, is_white, card_type, authentication_a, authentication_b, authentication_c, authentication_d, authentication_e, authentication_f, authentication_h, authentication_i, authentication_j, authentication_k, real_credit_card, real_card_bill_online, real_card_bill_email, pt
+FROM odps_user_verification_extend;

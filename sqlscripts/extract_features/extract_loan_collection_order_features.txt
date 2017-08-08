@@ -1,0 +1,38 @@
+-- 提取特征值并存入特征结果表,覆盖写对应分区中的数据
+INSERT OVERWRITE TABLE odps_loan_collection_order_features PARTITION (pt)
+SELECT pt AS x_date, user_id, 
+	CASE WHEN refuse_count1 > 0 THEN (refuse_count1 - refuse_count2) - 1 ELSE 0 END AS advice_refuse_cnt_p3m,
+	CASE WHEN audit_count1 > 0 THEN (audit_count1 - audit_count2) - 1 ELSE 0 END AS advice_audit_cnt_p3m,
+	pt
+FROM  (
+  SELECT 
+  a.pt, 
+  TO_CHAR(DATEADD(TO_DATE(a.pt, 'yyyymmdd'), -3, 'mm'), 'yyyymmdd') AS cc, 
+  a.user_id,
+  get_count_by_date(a.pt, b.x_date_list, b.x_count_list) AS refuse_count1,
+  get_count_by_date(TO_CHAR(DATEADD(TO_DATE(a.pt, 'yyyymmdd'), -3, 'mm'), 'yyyymmdd'), b.x_date_list, b.x_count_list) AS refuse_count2,
+  get_count_by_date(a.pt, c.x_date_list, c.x_count_list) AS audit_count1,
+  get_count_by_date(TO_CHAR(DATEADD(TO_DATE(a.pt, 'yyyymmdd'), -3, 'mm'), 'yyyymmdd'), c.x_date_list, c.x_count_list) AS audit_count2
+  FROM odps_loan_collection_order
+  a
+  LEFT OUTER JOIN (
+	  SELECT user_id, WM_CONCAT(',', pt) AS x_date_list, WM_CONCAT(',', x_count) AS x_count_list
+	  FROM ( 
+		  SELECT pt, user_id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at) AS x_count FROM odps_loan_collection_order WHERE next_loan_advice = -1
+	  )
+	  y1
+	  GROUP BY user_id
+  ) b
+  ON 
+  a.user_id = b.user_id
+  LEFT OUTER JOIN (
+	  SELECT user_id, WM_CONCAT(',', pt) AS x_date_list, WM_CONCAT(',', x_count) AS x_count_list
+	  FROM ( 
+		  SELECT pt, user_id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at) AS x_count FROM odps_loan_collection_order WHERE next_loan_advice = 2
+	  )
+	  y2
+	  GROUP BY user_id
+  ) c
+  ON 
+  a.user_id = c.user_id
+) table001

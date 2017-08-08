@@ -1,0 +1,74 @@
+-- 创建目标表
+CREATE TABLE odps_loan_person LIKE odps_loan_person_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_loan_person PARTITION (pt)
+SELECT 
+id, uid, open_id, id_number, type, name, phone, birthday, property, contact_username, attachment, credit_limit, created_at, updated_at, source_id, contact_phone, is_verify, created_ip, auth_key, invite_code, status, username, card_bind_status, customer_type, can_loan_time, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_loan_person_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_loan_person_tmp;
+SELECT COUNT(*) FROM  odps_loan_person;
+
+--- 创建增量表
+CREATE TABLE odps_loan_person_inc LIKE odps_loan_person;
+
+--- 删除历史表
+ALTER TABLE odps_loan_person_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_loan_person PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.uid ELSE a.uid END AS uid,
+	CASE WHEN b.id IS NOT NULL THEN b.open_id ELSE a.open_id END AS open_id,
+	CASE WHEN b.id IS NOT NULL THEN b.id_number ELSE a.id_number END AS id_number,
+	CASE WHEN b.id IS NOT NULL THEN b.type ELSE a.type END AS type,
+	CASE WHEN b.id IS NOT NULL THEN b.name ELSE a.name END AS name,
+	CASE WHEN b.id IS NOT NULL THEN b.phone ELSE a.phone END AS phone,
+	CASE WHEN b.id IS NOT NULL THEN b.birthday ELSE a.birthday END AS birthday,
+	CASE WHEN b.id IS NOT NULL THEN b.property ELSE a.property END AS property,
+	CASE WHEN b.id IS NOT NULL THEN b.contact_username ELSE a.contact_username END AS contact_username,
+	CASE WHEN b.id IS NOT NULL THEN b.attachment ELSE a.attachment END AS attachment,
+	CASE WHEN b.id IS NOT NULL THEN b.credit_limit ELSE a.credit_limit END AS credit_limit,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.source_id ELSE a.source_id END AS source_id,
+	CASE WHEN b.id IS NOT NULL THEN b.contact_phone ELSE a.contact_phone END AS contact_phone,
+	CASE WHEN b.id IS NOT NULL THEN b.is_verify ELSE a.is_verify END AS is_verify,
+	CASE WHEN b.id IS NOT NULL THEN b.created_ip ELSE a.created_ip END AS created_ip,
+	CASE WHEN b.id IS NOT NULL THEN b.auth_key ELSE a.auth_key END AS auth_key,
+	CASE WHEN b.id IS NOT NULL THEN b.invite_code ELSE a.invite_code END AS invite_code,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.username ELSE a.username END AS username,
+	CASE WHEN b.id IS NOT NULL THEN b.card_bind_status ELSE a.card_bind_status END AS card_bind_status,
+	CASE WHEN b.id IS NOT NULL THEN b.customer_type ELSE a.customer_type END AS customer_type,
+	CASE WHEN b.id IS NOT NULL THEN b.can_loan_time ELSE a.can_loan_time END AS can_loan_time,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_loan_person a 
+FULL OUTER JOIN odps_loan_person_inc b
+ON a.id  = b.id ;
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_loan_person_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, uid, open_id, id_number, type, name, phone, birthday, property, contact_username, attachment, credit_limit, created_at, updated_at, source_id, contact_phone, is_verify, created_ip, auth_key, invite_code, status, username, card_bind_status, customer_type, can_loan_time
+FROM odps_loan_person_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_loan_person_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+-- 创建快照目标表
+CREATE TABLE odps_loan_person_kz_${bdp.system.bizdate} LIKE odps_loan_person;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_loan_person_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, uid, open_id, id_number, type, name, phone, birthday, property, contact_username, attachment, credit_limit, created_at, updated_at, source_id, contact_phone, is_verify, created_ip, auth_key, invite_code, status, username, card_bind_status, customer_type, can_loan_time, pt
+FROM odps_loan_person;

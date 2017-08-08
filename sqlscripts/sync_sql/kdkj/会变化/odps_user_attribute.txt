@@ -1,0 +1,58 @@
+-- 创建目标表
+CREATE TABLE odps_user_attribute LIKE odps_user_attribute_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_attribute PARTITION (pt)
+SELECT 
+user_id, created_at, updated_at, rank_data, type, flag, is_blacklist, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_attribute_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_attribute_tmp;
+SELECT COUNT(*) FROM  odps_user_attribute;
+
+--- 创建增量表
+CREATE TABLE odps_user_attribute_inc LIKE odps_user_attribute;
+
+--- 删除历史表
+ALTER TABLE odps_user_attribute_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_attribute PARTITION (pt)
+SELECT  
+	CASE WHEN b.user_id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.user_id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.user_id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.user_id IS NOT NULL THEN b.rank_data ELSE a.rank_data END AS rank_data,
+	CASE WHEN b.user_id IS NOT NULL THEN b.type ELSE a.type END AS type,
+	CASE WHEN b.user_id IS NOT NULL THEN b.flag ELSE a.flag END AS flag,
+	CASE WHEN b.user_id IS NOT NULL THEN b.is_blacklist ELSE a.is_blacklist END AS is_blacklist,
+
+	CASE WHEN b.user_id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_attribute a 
+FULL OUTER JOIN odps_user_attribute_inc b
+ON a.user_id  = b.user_id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_attribute_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+user_id, created_at, updated_at, rank_data, type, flag, is_blacklist
+FROM odps_user_attribute_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_attribute_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_attribute_kz_${bdp.system.bizdate} LIKE odps_user_attribute;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_attribute_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+user_id, created_at, updated_at, rank_data, type, flag, is_blacklist, pt
+FROM odps_user_attribute;

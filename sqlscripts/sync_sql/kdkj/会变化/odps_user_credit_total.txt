@@ -1,0 +1,81 @@
+-- 创建目标表
+CREATE TABLE odps_user_credit_total LIKE odps_user_credit_total_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_credit_total PARTITION (pt)
+SELECT 
+id, user_id, amount, used_amount, locked_amount, updated_at, created_at, operator_name, remark, pocket_apr, house_apr, installment_apr, pocket_late_apr, house_late_apr, installment_late_apr, pocket_min, pocket_max, house_min, house_max, installment_min, installment_max, card_type, card_title, card_subtitle, card_no, initial_amount, is_already_initial_amount, increase_time, repayment_credit_add, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_credit_total_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_credit_total_tmp;
+SELECT COUNT(*) FROM  odps_user_credit_total;
+
+--- 创建增量表
+CREATE TABLE odps_user_credit_total_inc LIKE odps_user_credit_total;
+
+--- 删除历史表
+ALTER TABLE odps_user_credit_total_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_credit_total PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.amount ELSE a.amount END AS amount,
+	CASE WHEN b.id IS NOT NULL THEN b.used_amount ELSE a.used_amount END AS used_amount,
+	CASE WHEN b.id IS NOT NULL THEN b.locked_amount ELSE a.locked_amount END AS locked_amount,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.operator_name ELSE a.operator_name END AS operator_name,
+	CASE WHEN b.id IS NOT NULL THEN b.remark ELSE a.remark END AS remark,
+	CASE WHEN b.id IS NOT NULL THEN b.pocket_apr ELSE a.pocket_apr END AS pocket_apr,
+	CASE WHEN b.id IS NOT NULL THEN b.house_apr ELSE a.house_apr END AS house_apr,
+	CASE WHEN b.id IS NOT NULL THEN b.installment_apr ELSE a.installment_apr END AS installment_apr,
+	CASE WHEN b.id IS NOT NULL THEN b.pocket_late_apr ELSE a.pocket_late_apr END AS pocket_late_apr,
+	CASE WHEN b.id IS NOT NULL THEN b.house_late_apr ELSE a.house_late_apr END AS house_late_apr,
+	CASE WHEN b.id IS NOT NULL THEN b.installment_late_apr ELSE a.installment_late_apr END AS installment_late_apr,
+	CASE WHEN b.id IS NOT NULL THEN b.pocket_min ELSE a.pocket_min END AS pocket_min,
+	CASE WHEN b.id IS NOT NULL THEN b.pocket_max ELSE a.pocket_max END AS pocket_max,
+	CASE WHEN b.id IS NOT NULL THEN b.house_min ELSE a.house_min END AS house_min,
+	CASE WHEN b.id IS NOT NULL THEN b.house_max ELSE a.house_max END AS house_max,
+	CASE WHEN b.id IS NOT NULL THEN b.installment_min ELSE a.installment_min END AS installment_min,
+	CASE WHEN b.id IS NOT NULL THEN b.installment_max ELSE a.installment_max END AS installment_max,
+	CASE WHEN b.id IS NOT NULL THEN b.card_type ELSE a.card_type END AS card_type,
+	CASE WHEN b.id IS NOT NULL THEN b.card_title ELSE a.card_title END AS card_title,
+	CASE WHEN b.id IS NOT NULL THEN b.card_subtitle ELSE a.card_subtitle END AS card_subtitle,
+	CASE WHEN b.id IS NOT NULL THEN b.card_no ELSE a.card_no END AS card_no,
+	CASE WHEN b.id IS NOT NULL THEN b.initial_amount ELSE a.initial_amount END AS initial_amount,
+	CASE WHEN b.id IS NOT NULL THEN b.is_already_initial_amount ELSE a.is_already_initial_amount END AS is_already_initial_amount,
+	CASE WHEN b.id IS NOT NULL THEN b.increase_time ELSE a.increase_time END AS increase_time,
+	CASE WHEN b.id IS NOT NULL THEN b.repayment_credit_add ELSE a.repayment_credit_add END AS repayment_credit_add,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_credit_total a 
+FULL OUTER JOIN odps_user_credit_total_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_credit_total_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, amount, used_amount, locked_amount, updated_at, created_at, operator_name, remark, pocket_apr, house_apr, installment_apr, pocket_late_apr, house_late_apr, installment_late_apr, pocket_min, pocket_max, house_min, house_max, installment_min, installment_max, card_type, card_title, card_subtitle, card_no, initial_amount, is_already_initial_amount, increase_time, repayment_credit_add
+FROM odps_user_credit_total_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_credit_total_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_credit_total_kz_${bdp.system.bizdate} LIKE odps_user_credit_total;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_credit_total_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, amount, used_amount, locked_amount, updated_at, created_at, operator_name, remark, pocket_apr, house_apr, installment_apr, pocket_late_apr, house_late_apr, installment_late_apr, pocket_min, pocket_max, house_min, house_max, installment_min, installment_max, card_type, card_title, card_subtitle, card_no, initial_amount, is_already_initial_amount, increase_time, repayment_credit_add, pt
+FROM odps_user_credit_total;

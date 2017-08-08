@@ -1,0 +1,56 @@
+CREATE TABLE odps_report_form_attribute_tmp (
+	id BIGINT COMMENT '',
+	statement_name STRING COMMENT '页面名称/API名称',
+	stats_date STRING COMMENT '统计日期',
+	fastest BIGINT COMMENT '最快时间',
+	slowest BIGINT COMMENT '最慢时间',
+	avg BIGINT COMMENT '平均响应时间',
+	unusual STRING COMMENT '异常',
+	success_rate STRING COMMENT '成功率',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT '',
+	xdata STRING COMMENT '',
+	finished_at BIGINT COMMENT '页面更新完成时间'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_report_form_management_tmp (
+	id BIGINT COMMENT '',
+	statement_name STRING COMMENT '报表名',
+	url STRING COMMENT '连接地址',
+	description STRING COMMENT '报表描述',
+	info STRING COMMENT '报表信息',
+	maintain_people STRING COMMENT '维护人',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT '',
+	xdata STRING COMMENT '',
+	status BIGINT COMMENT '0:停用 1:启用 2:已删除',
+	type BIGINT COMMENT '类型 1:页面 2:API',
+	url_type BIGINT COMMENT ''
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_report_form_response_tmp_log_tmp (
+	uuid STRING COMMENT '',
+	statement_name STRING COMMENT '报表/控制器名',
+	user_name STRING COMMENT '',
+	type BIGINT COMMENT '相应类型：1页面；2API；',
+	response_start_time BIGINT COMMENT '响应开始时间',
+	response_end_time BIGINT COMMENT '响应结束时间',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT '',
+	xdata STRING COMMENT ''
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;

@@ -1,0 +1,830 @@
+CREATE TABLE odps_user_loan_order_delay_log_tmp (
+	id BIGINT, 
+	order_id BIGINT, 
+	user_id BIGINT, 
+	service_fee BIGINT, 
+	counter_fee BIGINT, 
+	late_fee BIGINT, 
+	delay_day BIGINT, 
+	principal BIGINT, 
+	status BIGINT, 
+	coupon_id BIGINT, 
+	coupon_amount BIGINT, 
+	remark STRING, 
+	created_at BIGINT, 
+	updated_at BIGINT, 
+	repay_account_id BIGINT, 
+	late_day BIGINT, 
+	plan_fee_time BIGINT
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_order_loan_check_log_tmp (
+	id BIGINT COMMENT '',
+	order_id BIGINT COMMENT '订单ID',
+	user_id BIGINT COMMENT '',
+	repayment_id BIGINT COMMENT '借款时为0，还款时，如果有计划表，那边为分期计划表中的自增ID，用来获取分期数据',
+	before_status BIGINT COMMENT '原始状态',
+	after_status BIGINT COMMENT '修改后状态',
+	operator_name STRING COMMENT '审核人',
+	remark STRING COMMENT '备注',
+	type BIGINT COMMENT '1、借款；2、还款',
+	operation_type BIGINT COMMENT '操作类型，如放款初审、复审等，详见model类',
+	repayment_type BIGINT COMMENT '还款类型：1零钱贷  2房租贷',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT '',
+	head_code STRING COMMENT '备注--头码',
+	back_code STRING COMMENT '备注--尾码',
+	reason_remark STRING COMMENT '审核码',
+	can_loan_type BIGINT COMMENT '是否可再借 1 可再借 -1 不可再借 2 1个月后再借',
+	tree STRING COMMENT '决策树'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_credit_review_log_tmp (
+	id BIGINT,
+	user_id BIGINT COMMENT '用户id',
+	type BIGINT COMMENT '类型',
+	before_number DOUBLE COMMENT '操作前数额',
+	operate_number DOUBLE COMMENT '操作数额',
+	after_number DOUBLE COMMENT '操作后数额',
+	status BIGINT COMMENT '状态 0:待审核 1:审核通过 -1:审核驳回',
+	creater_name STRING COMMENT '创建人',
+	operator_name STRING COMMENT '审核人',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_register_info_tmp (
+	id BIGINT,
+	user_id BIGINT COMMENT '用户id',
+	clienttype STRING,
+	osversion STRING,
+	appversion STRING,
+	devicename STRING,
+	created_at BIGINT,
+	appmarket STRING COMMENT '应用市场',
+	deviceid STRING COMMENT '设备码',
+	x_date STRING COMMENT '日期',
+	source BIGINT COMMENT '来源：1、员工贷，2、现金卡'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+CREATE TABLE odps_user_credit_money_log_tmp (
+	id BIGINT COMMENT '',
+	type BIGINT COMMENT '类型：1、打款；2、扣款',
+	payment_type BIGINT COMMENT '支付类型：1、系统自动扣款；2、客户银行卡转账；3、客户支付宝转账',
+	status BIGINT COMMENT '状态：-1、失败；1、成功',
+	user_id STRING COMMENT '用户ID',
+	order_id STRING COMMENT '订单ID',
+	order_uuid STRING COMMENT '交易uuid',
+	operator_money BIGINT COMMENT '操作金额,单位分',
+	operator_name STRING COMMENT '操作者',
+	pay_order_id STRING COMMENT '支付关联ID',
+	created_at BIGINT COMMENT '创建时间',
+	remark STRING COMMENT '备注',
+	img_url STRING COMMENT '凭证url地址',
+	updated_at BIGINT COMMENT '',
+	card_id BIGINT COMMENT '扣款银行卡',
+	debit_channel BIGINT COMMENT '扣款通道',
+	debit_account STRING COMMENT '扣款通道主体账号'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+CREATE TABLE odps_alipay_repayment_log_tmp (
+	id BIGINT COMMENT '',
+	alipay_order_id STRING COMMENT '交易uuid',
+	status BIGINT COMMENT '状态：0、未处理；1、已成功',
+	money BIGINT COMMENT '支付金额,单位分',
+	alipay_date STRING COMMENT '支付时间',
+	operator_user STRING COMMENT '操作人',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '修改时间',
+	type BIGINT COMMENT '支付宝账号类型'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+CREATE TABLE odps_period_user_order_loan_check_log_tmp (
+	id BIGINT COMMENT '',
+	order_id BIGINT COMMENT '订单ID',
+	user_id BIGINT COMMENT '',
+	repayment_id BIGINT COMMENT '借款时为0，还款时，如果有计划表，那边为分期计划表中的自增ID，用来获取分期数据',
+	before_status BIGINT COMMENT '原始状态',
+	after_status BIGINT COMMENT '修改后状态',
+	operator_name STRING COMMENT '审核人',
+	remark STRING COMMENT '备注',
+	type BIGINT COMMENT '1、借款；2、还款',
+	operation_type BIGINT COMMENT '操作类型，如放款初审、复审等，详见model类',
+	repayment_type BIGINT COMMENT '还款类型：1零钱贷  2房租贷',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT '',
+	head_code STRING COMMENT '备注--头码',
+	back_code STRING COMMENT '备注--尾码',
+	reason_remark STRING COMMENT '审核码',
+	can_loan_type BIGINT COMMENT '是否可再借 1 可再借 -1 不可再借 2 1个月后再借',
+	tree STRING COMMENT '决策树'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_loan_order_partial_log_tmp (
+	id BIGINT COMMENT '',
+	order_id BIGINT COMMENT '订单ID',
+	user_id BIGINT COMMENT '用户ID',
+	repayment_amount BIGINT COMMENT '还款金额, 单位分',
+	last_amount BIGINT COMMENT '还款剩余金额, 单位分',
+	service_fee BIGINT COMMENT '总操作费，单位分',
+	total_fee BIGINT COMMENT '总服务费，单位分',
+	delay_times BIGINT COMMENT '部分还款次数',
+	late_fee BIGINT COMMENT '之前逾期费',
+	repay_account_id BIGINT COMMENT '还款主体id',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '修改时间',
+	status BIGINT COMMENT '0待支付，1支付成功'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+
+CREATE TABLE odps_accumulation_fund_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '',
+	city STRING COMMENT '',
+	status BIGINT COMMENT '',
+	data STRING COMMENT '',
+	message STRING COMMENT '',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT '',
+	open_id STRING COMMENT ''
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+CREATE TABLE odps_online_bank_info_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '',
+	status BIGINT COMMENT '',
+	open_id STRING COMMENT '',
+	x_data STRING COMMENT '',
+	bank_num STRING COMMENT '',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT ''
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_statistics_verification_tmp (
+	id BIGINT COMMENT '',
+	x_date STRING COMMENT '',
+	reg_num BIGINT COMMENT '注册用户人数',
+	realname_num BIGINT COMMENT '实名总数',
+	contacts_list_num BIGINT COMMENT '通讯录总数',
+	zmxy_num BIGINT COMMENT '芝麻授信总数',
+	jxl_num BIGINT COMMENT '运营商总数',
+	bind_card_num BIGINT COMMENT '绑卡总数',
+	alipay_num BIGINT COMMENT '支付宝总数',
+	public_funds_num BIGINT COMMENT '公积金总数',
+	unapply_num BIGINT COMMENT '未申请总数',
+	apply_num BIGINT COMMENT '申请总数',
+	apply_success_num BIGINT COMMENT '申请通过总数',
+	apply_fail_num BIGINT COMMENT '申请未通过总数',
+	real_work_num BIGINT COMMENT '工作信息认证总数',
+	all_verif_num BIGINT COMMENT '通过所有基础认证的人数',
+	some_verif_num BIGINT COMMENT '通过实名认证但是没有认证完全整的用户',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT ''
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################################################################################################################
+
+###########################################################################################################################################################################
+
+
+
+
+
+CREATE TABLE odps_user_loan_order_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户id',
+	order_type BIGINT COMMENT '订单类型：1、零钱袋，2、房租贷,3、分期商城',
+	money_amount BIGINT COMMENT '金额，单位为分',
+	apr DOUBLE COMMENT '利率',
+	loan_method BIGINT COMMENT '0:按天，1,：按月，2：按年',
+	loan_term BIGINT COMMENT '根据loan_method确定，几天、几月、几年',
+	loan_interests BIGINT COMMENT '总共利息，单位分',
+	operator_name STRING COMMENT '操作人',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	status BIGINT COMMENT '状态：-3、已作废、不通过；-2、已坏账；-1、已逾期；0、待审核；1、审核通过；2、已放款；3、还款中；4、部分还款；5、已还款',
+	order_time BIGINT COMMENT '下单时间',
+	loan_time BIGINT COMMENT '放款时间，用于计算利息的起止时间',
+	trail_time BIGINT COMMENT '订单审核时间',
+	current_interests BIGINT COMMENT '单位：分，该订单目前为止产生的利息，用脚本跑出来，再还款的时候，可以核对一遍，提高准确度',
+	late_fee DOUBLE COMMENT '单位：分，滞纳金，脚本跑出来，当还款的时候重新计算进行核对',
+	late_fee_apr DOUBLE COMMENT '滞纳金利率，单位为万分之几',
+	card_id BIGINT COMMENT '银行卡ID',
+	counter_fee BIGINT COMMENT '手续费',
+	reason_remark STRING COMMENT '拒绝码备注',
+	is_first BIGINT COMMENT '是否是首单，0，不是；1，是',
+	auto_risk_check_status BIGINT COMMENT '自动风控检测状态:-1失败，0未检测，1已检测',
+	is_hit_risk_rule BIGINT COMMENT '是否命中风险策略',
+	sub_order_type BIGINT COMMENT '订单子类型',
+	is_user_confirm BIGINT COMMENT '用户是否查看了审核结果',
+	from_app BIGINT COMMENT '下单来源app，0员工贷，1现金卡，2.....',
+	coupon_id BIGINT COMMENT '优惠券ID',
+	tree STRING COMMENT '风控决策树版本',
+	fund_id BIGINT COMMENT '',
+	card_type BIGINT COMMENT '下单卡类型，1白卡，2金卡....',
+	temp_check_status BIGINT COMMENT '通过的订单为1',
+	post_interest BIGINT COMMENT '是否利息后置1是，0否'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_checked_date_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户id',
+	last_check_date STRING COMMENT '最后签到日期',
+	total_check_num BIGINT COMMENT '总签到次数',
+	series_check_num BIGINT COMMENT '连续签到次数',
+	is_auto_reminder BIGINT COMMENT '是否开启签到提醒 1开启 0禁用',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+CREATE TABLE odps_user_loan_order_repayment_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户id',
+	order_id BIGINT COMMENT '跟借款订单关联，为借款订单',
+	principal BIGINT COMMENT '本金，单位为分',
+	interests BIGINT COMMENT '利息：单位分',
+	late_day BIGINT COMMENT '滞纳天数',
+	late_fee BIGINT COMMENT '滞纳金：单位分',
+	plan_repayment_time BIGINT COMMENT '结息日期',
+	plan_fee_time BIGINT COMMENT '开始计算滞纳金时间',
+	operator_name STRING COMMENT '操作人',
+	status BIGINT COMMENT '状态：-1、作废，不通过；0：生息中；1、待审核；2、审核通过；3、还款完成',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	total_money BIGINT COMMENT '还款总额，单位分',
+	card_id BIGINT COMMENT '银行卡ID',
+	true_repayment_time BIGINT COMMENT '实际还款时间',
+	loan_time BIGINT COMMENT '起息日期',
+	interest_day BIGINT COMMENT '计息天数',
+	apr DOUBLE COMMENT '日利率，单位为万分之几',
+	loan_day BIGINT COMMENT '借还总天数',
+	apply_repayment_time BIGINT COMMENT '申请还款时间',
+	interest_time BIGINT COMMENT '当前计算利息的时间',
+	true_total_money BIGINT COMMENT '实际还款总额 ，单位分',
+	debit_times BIGINT COMMENT '扣款次数',
+	current_debit_money BIGINT COMMENT '当前扣款金额，单位分',
+	is_overdue BIGINT COMMENT '是否是逾期：0，不是；1，是',
+	overdue_day BIGINT COMMENT '逾期天数',
+	coupon_id BIGINT COMMENT '抵扣券ID',
+	coupon_money BIGINT COMMENT '抵扣券抵扣金额',
+	user_book STRING COMMENT '用户留言'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+
+CREATE TABLE odps_loan_person_tmp (
+	id BIGINT COMMENT 'id',
+	uid BIGINT COMMENT '用户ID',
+	open_id STRING COMMENT '芝麻信用id',
+	id_number STRING COMMENT '借款人编号',
+	type BIGINT COMMENT '借款人类型',
+	name STRING COMMENT '借款人名称',
+	phone STRING COMMENT '联系方式',
+	birthday BIGINT COMMENT '借款人出生日期',
+	property STRING COMMENT '借款人性质',
+	contact_username STRING COMMENT '紧急联系人',
+	attachment STRING COMMENT '上传的材料',
+	credit_limit BIGINT COMMENT '授信额度',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	source_id BIGINT COMMENT '借款人来源：0默认口袋快借，1笨鸟',
+	contact_phone STRING COMMENT '紧急联系人手机号',
+	is_verify BIGINT COMMENT '是否实名认证',
+	created_ip STRING COMMENT '',
+	auth_key STRING COMMENT '',
+	invite_code STRING COMMENT '邀请码',
+	status BIGINT COMMENT '借款人状态',
+	username STRING COMMENT '用户名，这里是手机',
+	card_bind_status BIGINT COMMENT '银行卡绑定状态：0，未绑定，1：绑定',
+	customer_type BIGINT COMMENT '是否是老用户：0、新用户；1；老用户',
+	can_loan_time BIGINT COMMENT '用户可借款冷却时间'
+
+
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_loan_order_attribute_tmp (
+	order_id BIGINT COMMENT '订单号',
+	user_id BIGINT COMMENT '用户ID',
+	check_type BIGINT COMMENT '审核类型：0、机审；1、人工审核',
+	after_status BIGINT COMMENT '机审或者人工审核之后状态',
+	checked_at BIGINT COMMENT '机审或者人工审核时间',
+	tree STRING COMMENT '决策树',
+	operator_name STRING COMMENT '机审或者人工审核名称',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	is_active BIGINT COMMENT '活跃非活跃状态 1:活跃',
+	rank_data STRING COMMENT '天眼分',
+	is_new BIGINT COMMENT '新老用户标识，1表新用户，2表老用户',
+	amount BIGINT COMMENT '总额度 -1表该单无额度记录'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_verification_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户ID',
+	real_pay_pwd_status BIGINT COMMENT '是否设置了支付密码',
+	real_verify_status BIGINT COMMENT '是否进行了身份认证',
+	real_work_status BIGINT COMMENT '是否进行了工作信息认证',
+	real_contact_status BIGINT COMMENT '是否进行了工作信息认证',
+	real_bind_bank_card_status BIGINT COMMENT '是否绑定银行卡',
+	real_zmxy_status BIGINT COMMENT '是否进行了芝麻信用认证',
+	updated_at BIGINT COMMENT '',
+	created_at BIGINT COMMENT '',
+	operator_name STRING COMMENT '操作人',
+	remark STRING COMMENT '备注',
+	status BIGINT COMMENT '状态，默认为0，备用',
+	is_quota_novice BIGINT COMMENT '零钱贷是否是新手：0：新手，1：非新手',
+	is_fzd_novice BIGINT COMMENT '房租贷是否是新手：0：新手，1：非新手',
+	real_work_fzd_status BIGINT COMMENT '房租贷公司认证，0，没有认证，1，进行了认证',
+	real_credit_card_status BIGINT COMMENT '信用卡是否添加，0：否，1：是',
+	is_first_loan BIGINT COMMENT '是否是首次借款，0：是，1：否',
+	real_jxl_status BIGINT COMMENT '是否完成聚信立流程',
+	real_more_status BIGINT COMMENT '是否认证了更多',
+	real_alipay_status BIGINT COMMENT '是否完成了支付宝认证',
+	real_yys_status BIGINT COMMENT '',
+	real_taobao_status BIGINT COMMENT '是否进行了淘宝认证',
+	real_jd_status BIGINT COMMENT '是否进行了京东认证',
+	real_accredit_status BIGINT COMMENT '是否进行了多头借贷认证',
+	real_online_bank_status BIGINT COMMENT '',
+	real_wy_status BIGINT COMMENT '',
+	real_social_security_status BIGINT COMMENT ''
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+CREATE TABLE odps_user_verification_extend_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户ID',
+	real_accumulation_fund BIGINT COMMENT '是否进行了公积金认证',
+	real_social_security BIGINT COMMENT '是否进行了社保认证',
+	real_status BIGINT COMMENT '是否进行了认证(预留)',
+	updated_at BIGINT COMMENT '',
+	created_at BIGINT COMMENT '',
+	golden_tag BIGINT COMMENT '金卡标记',
+	is_white BIGINT COMMENT '',
+	card_type BIGINT COMMENT '开卡类型：默认0，现金白卡；1，现金卡；2，分期卡',
+	authentication_a BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_b BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_c BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_d BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_e BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_f BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_h BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_i BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_j BIGINT COMMENT '预留认证字段详情见MODEL',
+	authentication_k BIGINT COMMENT '预留认证字段详情见MODEL',
+	real_credit_card BIGINT COMMENT '是否进行了信用卡认证',
+	real_card_bill_online BIGINT COMMENT '是否进行了网银账单导入',
+	real_card_bill_email BIGINT COMMENT '是否进行了邮箱账单导入'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_quota_person_info_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户ID',
+	address STRING COMMENT '居住地址',
+	longitude STRING COMMENT '经度',
+	latitude STRING COMMENT '纬度',
+	live_time_type BIGINT COMMENT '居住时间类型',
+	degrees BIGINT COMMENT '学历',
+	marriage BIGINT COMMENT '婚姻状态',
+	status BIGINT COMMENT '状态',
+	created_at BIGINT COMMENT '',
+	updated_at BIGINT COMMENT '',
+	address_distinct STRING COMMENT '地址区域'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_credit_total_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户UID',
+	amount BIGINT COMMENT '总额度',
+	used_amount BIGINT COMMENT '已使用额度',
+	locked_amount BIGINT COMMENT '已锁定额度',
+	updated_at BIGINT COMMENT '',
+	created_at BIGINT COMMENT '',
+	operator_name STRING COMMENT '',
+	remark STRING COMMENT '',
+	pocket_apr DOUBLE COMMENT '零钱包利率，单位万分之一',
+	house_apr DOUBLE COMMENT '房租月利率：单位百分之几',
+	installment_apr DOUBLE COMMENT '分期商城利率：单位',
+	pocket_late_apr DOUBLE COMMENT '零钱包违约利率：单位万分之一',
+	house_late_apr DOUBLE COMMENT '房租违约利率：单位万分之一',
+	installment_late_apr DOUBLE COMMENT '分期商城违约利率:单位万分之一',
+	pocket_min BIGINT COMMENT '零钱包借款最少天数：单位天',
+	pocket_max BIGINT COMMENT '零钱包最长借款天数：单位天',
+	house_min BIGINT COMMENT '房租宝最少借款月数：单位月',
+	house_max BIGINT COMMENT '房租宝最长借款月数：单位月',
+	installment_min BIGINT COMMENT '分期商城最短分期月数,单位月',
+	installment_max BIGINT COMMENT '分期商城最长分期月数',
+	card_type BIGINT COMMENT '卡类型',
+	card_title STRING COMMENT '卡中文名称',
+	card_subtitle STRING COMMENT '卡副名称',
+	card_no STRING COMMENT '卡号',
+	initial_amount BIGINT COMMENT '初始额度',
+	is_already_initial_amount BIGINT COMMENT '是否记录过初始值：考虑到初始额度为0的情况；0、没有；1、有',
+	increase_time BIGINT COMMENT '提额时间，一天只能提额一次',
+	repayment_credit_add BIGINT COMMENT '还款增加的额度'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_loan_order_period_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户id',
+	order_type BIGINT COMMENT '订单类型：1、零钱袋，2、房租贷,3、分期商城',
+	money_amount BIGINT COMMENT '金额，单位为分',
+	apr DOUBLE COMMENT '利率',
+	loan_method BIGINT COMMENT '0:按天，1,：按月，2：按年',
+	loan_term BIGINT COMMENT '根据loan_method确定，几天、几月、几年',
+	loan_interests BIGINT COMMENT '总共利息，单位分',
+	operator_name STRING COMMENT '操作人',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	status BIGINT COMMENT '状态：-3、已作废、不通过；-2、已坏账；-1、已逾期；0、待审核；1、审核通过；2、已放款；3、还款中；4、部分还款；5、已还款',
+	order_time BIGINT COMMENT '下单时间',
+	loan_time BIGINT COMMENT '放款时间，用于计算利息的起止时间',
+	trail_time BIGINT COMMENT '订单审核时间',
+	current_interests BIGINT COMMENT '单位：分，该订单目前为止产生的利息，用脚本跑出来，再还款的时候，可以核对一遍，提高准确度',
+	late_fee DOUBLE COMMENT '单位：分，滞纳金，脚本跑出来，当还款的时候重新计算进行核对',
+	late_fee_apr DOUBLE COMMENT '滞纳金利率，单位为万分之几',
+	card_id BIGINT COMMENT '银行卡ID',
+	counter_fee BIGINT COMMENT '手续费',
+	reason_remark STRING COMMENT '拒绝码备注',
+	is_first BIGINT COMMENT '是否是首单，0，不是；1，是',
+	auto_risk_check_status BIGINT COMMENT '自动风控检测状态:-1失败，0未检测，1已检测',
+	is_hit_risk_rule BIGINT COMMENT '是否命中风险策略',
+	sub_order_type BIGINT COMMENT '订单子类型',
+	is_user_confirm BIGINT COMMENT '用户是否查看了审核结果',
+	from_app BIGINT COMMENT '下单来源app，0员工贷，1现金卡，2.....',
+	coupon_id BIGINT COMMENT '优惠券ID',
+	tree STRING COMMENT '风控决策树版本',
+	fund_id BIGINT COMMENT '',
+	card_type BIGINT COMMENT '下单卡类型，1白卡，2金卡....',
+	temp_check_status BIGINT COMMENT '通过的订单为1'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_attribute_tmp (
+	user_id BIGINT COMMENT '用户ID',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	rank_data STRING COMMENT '天眼分',
+	type STRING COMMENT '特别准入标签',
+	flag BIGINT COMMENT '准入类型 1:老用户 2:新用户',
+	is_blacklist BIGINT COMMENT '是否是黑名单用户，1表示是黑名单用户，0表示不是黑名单用户'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_loan_order_repayment_period_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户id',
+	order_id BIGINT COMMENT '跟借款订单关联，为借款订单',
+	period BIGINT COMMENT '还款期数',
+	principal BIGINT COMMENT '本金，单位为分',
+	interests BIGINT COMMENT '利息：单位分',
+	late_day BIGINT COMMENT '滞纳天数',
+	late_fee BIGINT COMMENT '滞纳金：单位分',
+	plan_repayment_time BIGINT COMMENT '结息日期',
+	plan_fee_time BIGINT COMMENT '开始计算滞纳金时间',
+	operator_name STRING COMMENT '操作人',
+	status BIGINT COMMENT '状态：-1、作废，不通过；0：生息中；1、待审核；2、审核通过；3、还款完成',
+	total_money BIGINT COMMENT '还款总额，单位分',
+	card_id BIGINT COMMENT '银行卡ID',
+	true_repayment_time BIGINT COMMENT '实际还款时间',
+	loan_time BIGINT COMMENT '起息日期',
+	interest_day BIGINT COMMENT '计息天数',
+	apr DOUBLE COMMENT '日利率，单位为万分之几',
+	loan_day BIGINT COMMENT '借还总天数',
+	apply_repayment_time BIGINT COMMENT '申请还款时间',
+	interest_time BIGINT COMMENT '当前计算利息的时间',
+	true_total_money BIGINT COMMENT '实际还款总额 ，单位分',
+	debit_times BIGINT COMMENT '扣款次数',
+	current_debit_money BIGINT COMMENT '当前扣款金额，单位分',
+	is_overdue BIGINT COMMENT '是否是逾期：0，不是；1，是',
+	overdue_day BIGINT COMMENT '逾期天数',
+	coupon_id BIGINT COMMENT '抵扣券ID',
+	coupon_money BIGINT COMMENT '抵扣券抵扣金额',
+	user_book STRING COMMENT '用户留言',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_period_user_credit_total_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户UID',
+	amount BIGINT COMMENT '总额度',
+	used_amount BIGINT COMMENT '已使用额度',
+	locked_amount BIGINT COMMENT '已锁定额度',
+	updated_at BIGINT COMMENT '',
+	created_at BIGINT COMMENT '',
+	operator_name STRING COMMENT '',
+	remark STRING COMMENT '',
+	pocket_apr DOUBLE COMMENT '零钱包利率，单位万分之一',
+	house_apr DOUBLE COMMENT '房租月利率：单位百分之几',
+	installment_apr DOUBLE COMMENT '分期商城利率：单位',
+	pocket_late_apr DOUBLE COMMENT '零钱包违约利率：单位万分之一',
+	house_late_apr DOUBLE COMMENT '房租违约利率：单位万分之一',
+	installment_late_apr DOUBLE COMMENT '分期商城违约利率:单位万分之一',
+	pocket_min BIGINT COMMENT '零钱包借款最少天数：单位天',
+	pocket_max BIGINT COMMENT '零钱包最长借款天数：单位天',
+	house_min BIGINT COMMENT '房租宝最少借款月数：单位月',
+	house_max BIGINT COMMENT '房租宝最长借款月数：单位月',
+	installment_min BIGINT COMMENT '分期商城最短分期月数,单位月',
+	installment_max BIGINT COMMENT '分期商城最长分期月数',
+	card_type BIGINT COMMENT '卡类型',
+	card_title STRING COMMENT '卡中文名称',
+	card_subtitle STRING COMMENT '卡副名称',
+	card_no STRING COMMENT '卡号',
+	initial_amount BIGINT COMMENT '初始额度，单位:分',
+	is_already_initial_amount BIGINT COMMENT '是否记录过初始值：考虑到初始额度为0的情况；0、没有；1、有',
+	increase_time BIGINT COMMENT '提额时间，一天只能提额一次',
+	repayment_credit_add BIGINT COMMENT '还款增加的额度'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_loan_order_partial_tmp (
+	id BIGINT COMMENT '',
+	order_id BIGINT COMMENT '订单ID',
+	user_id BIGINT COMMENT '用户ID',
+	repayment_amount BIGINT COMMENT '还款金额, 单位分',
+	last_amount BIGINT COMMENT '还款剩余金额, 单位分',
+	service_fee BIGINT COMMENT '总操作费，单位分',
+	total_fee BIGINT COMMENT '总服务费，单位分',
+	delay_times BIGINT COMMENT '部分还款次数',
+	late_fee BIGINT COMMENT '之前逾期费',
+	last_id BIGINT COMMENT '当前部分还款记录Id',
+	remark STRING COMMENT '备注',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '修改时间'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+######################################################################################################################################
+
+
+CREATE TABLE odps_user_login_upload_log_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户ID',
+	longitude STRING COMMENT '经度',
+	latitude STRING COMMENT '纬度',
+	address STRING COMMENT '具体地址',
+	time BIGINT COMMENT '上报时间',
+	clientType STRING COMMENT '',
+	osVersion STRING COMMENT '',
+	appVersion STRING COMMENT '',
+	deviceName STRING COMMENT '',
+	created_at BIGINT COMMENT '',
+	appMarket STRING COMMENT '应用市场',
+	deviceId STRING COMMENT '设备标识'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_user_contact_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户id',
+	relation BIGINT COMMENT '关系',
+	name STRING COMMENT '姓名',
+	mobile STRING COMMENT '联系方式',
+	source BIGINT COMMENT '获取来源',
+	status BIGINT COMMENT '状态',
+	updated_at BIGINT COMMENT '更新时间',
+	created_at BIGINT COMMENT '创建时间',
+	relation_spare BIGINT COMMENT '备用关系',
+	name_spare STRING COMMENT '姓名备用',
+	mobile_spare STRING COMMENT '联系方式备用'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+######################################################################################################
+
+CREATE TABLE odps_card_info_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户ID',
+	bank_id BIGINT COMMENT '银行卡ID',
+	bank_name STRING COMMENT '银行名称',
+	card_no STRING COMMENT '卡号',
+	credit_amount BIGINT COMMENT '信用卡额度',
+	valid_period BIGINT COMMENT '信用卡有效期限',
+	type BIGINT COMMENT '银行卡类型(1:信用卡   2:借记卡)',
+	phone BIGINT COMMENT '手机号',
+	status BIGINT COMMENT '状态',
+	main_card BIGINT COMMENT '是否为主卡',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	name STRING COMMENT '用户姓名',
+	bank_address STRING COMMENT '开户行地址'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_detail_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '用户id',
+	username STRING COMMENT '用户名',
+	reg_client_type STRING COMMENT '注册终端类型',
+	reg_app_version STRING COMMENT '注册app版本',
+	reg_device_name STRING COMMENT '注册设备名称',
+	reg_os_version STRING COMMENT '注册设备os版本',
+	reg_app_market STRING COMMENT '注册app来源市场',
+	qr_code STRING COMMENT '邀请二维码',
+	invite_type BIGINT COMMENT '返利分档类型',
+	exclusive_type BIGINT COMMENT '用户邀请类型',
+	invite_key STRING COMMENT '专属邀请码',
+	intergration BIGINT COMMENT '用户积分',
+	phone_address STRING COMMENT '号码所在地',
+	phone_carrier STRING COMMENT '',
+	user_address STRING COMMENT '用户真实收件地址',
+	self_selection STRING COMMENT '自选基金',
+	created_at BIGINT COMMENT '创建时间',
+	company_id BIGINT COMMENT '公司ID',
+	company_name STRING COMMENT '公司名称',
+	company_email STRING COMMENT '公司email',
+	contacts_type BIGINT COMMENT '紧急联系人关系类型',
+	contacts_name STRING COMMENT '紧急联系人姓名',
+	contacts_mobile STRING COMMENT '紧急联系人电话',
+	company_phone STRING COMMENT '公司电话',
+	company_address STRING COMMENT '公司地址',
+	updated_at BIGINT COMMENT '更新时间'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_user_proof_materia_tmp (
+	id BIGINT COMMENT '',
+	user_id BIGINT COMMENT '',
+	type BIGINT COMMENT '证明材料类型：身份证、学历证、工资证明、工卡、资产证明',
+	pic_name STRING COMMENT '图片名称',
+	url STRING COMMENT '材料地址',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	status BIGINT COMMENT '',
+	ocr_type BIGINT COMMENT '是否拍照上传 1:识别,2:拍照'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+

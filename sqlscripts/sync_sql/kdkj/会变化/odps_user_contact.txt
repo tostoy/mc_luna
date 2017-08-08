@@ -1,0 +1,61 @@
+-- 创建目标表
+CREATE TABLE odps_user_contact LIKE odps_user_contact_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_contact PARTITION (pt)
+SELECT id, user_id, relation, name, mobile, source, status, updated_at, created_at, relation_spare, name_spare, mobile_spare, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_contact_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_contact_tmp;
+SELECT COUNT(*) FROM  odps_user_contact;
+
+--- 创建增量表
+CREATE TABLE odps_user_contact_inc LIKE odps_user_contact;
+
+--- 删除历史表
+ALTER TABLE odps_period_user_credit_total_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_contact PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.relation ELSE a.relation END AS relation,
+	CASE WHEN b.id IS NOT NULL THEN b.name ELSE a.name END AS name,
+	CASE WHEN b.id IS NOT NULL THEN b.mobile ELSE a.mobile END AS mobile,
+	CASE WHEN b.id IS NOT NULL THEN b.source ELSE a.source END AS source,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.relation_spare ELSE a.relation_spare END AS relation_spare,
+	CASE WHEN b.id IS NOT NULL THEN b.name_spare ELSE a.name_spare END AS name_spare,
+	CASE WHEN b.id IS NOT NULL THEN b.mobile_spare ELSE a.mobile_spare END AS mobile_spare,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_contact a 
+FULL OUTER JOIN odps_user_contact_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_contact_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, relation, name, mobile, source, status, updated_at, created_at, relation_spare, name_spare, mobile_spare
+FROM odps_user_contact_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_contact_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_contact_kz_${bdp.system.bizdate} LIKE odps_user_contact;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_contact_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, relation, name, mobile, source, status, updated_at, created_at, relation_spare, name_spare, mobile_spare, pt
+FROM odps_user_contact;

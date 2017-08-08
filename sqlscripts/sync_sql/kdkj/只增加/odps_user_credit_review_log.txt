@@ -1,0 +1,11 @@
+-- 创建目标表
+CREATE TABLE odps_user_credit_review_log LIKE odps_user_credit_review_log_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_credit_review_log PARTITION (pt)
+SELECT id, user_id, type, before_number, operate_number, after_number, status, creater_name, operator_name, remark, created_at, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_credit_review_log_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_credit_review_log_tmp;
+SELECT COUNT(*) FROM  odps_user_credit_review_log;

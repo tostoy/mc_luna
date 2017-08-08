@@ -1,0 +1,86 @@
+-- 创建目标表
+CREATE TABLE odps_user_loan_order_repayment LIKE odps_user_loan_order_repayment_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_loan_order_repayment PARTITION (pt)
+SELECT 
+id, user_id, order_id, principal, interests, late_day, late_fee, plan_repayment_time, plan_fee_time, operator_name, status, remark, created_at, updated_at, total_money, card_id, true_repayment_time, loan_time, interest_day, apr, loan_day, apply_repayment_time, interest_time, true_total_money, debit_times, current_debit_money, is_overdue, overdue_day, coupon_id, coupon_money, user_book, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_loan_order_repayment_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_loan_order_repayment_tmp;
+SELECT COUNT(*) FROM  odps_user_loan_order_repayment;
+
+--- 创建增量表
+CREATE TABLE odps_user_loan_order_repayment_inc LIKE odps_user_loan_order_repayment;
+
+--- 删除历史表
+ALTER TABLE odps_user_loan_order_repayment_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+
+
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_loan_order_repayment PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.order_id ELSE a.order_id END AS order_id,
+	CASE WHEN b.id IS NOT NULL THEN b.principal ELSE a.principal END AS principal,
+	CASE WHEN b.id IS NOT NULL THEN b.interests ELSE a.interests END AS interests,
+	CASE WHEN b.id IS NOT NULL THEN b.late_day ELSE a.late_day END AS late_day,
+	CASE WHEN b.id IS NOT NULL THEN b.late_fee ELSE a.late_fee END AS late_fee,
+	CASE WHEN b.id IS NOT NULL THEN b.plan_repayment_time ELSE a.plan_repayment_time END AS plan_repayment_time,
+	CASE WHEN b.id IS NOT NULL THEN b.plan_fee_time ELSE a.plan_fee_time END AS plan_fee_time,
+	CASE WHEN b.id IS NOT NULL THEN b.operator_name ELSE a.operator_name END AS operator_name,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.remark ELSE a.remark END AS remark,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.total_money ELSE a.total_money END AS total_money,
+	CASE WHEN b.id IS NOT NULL THEN b.card_id ELSE a.card_id END AS card_id,
+	CASE WHEN b.id IS NOT NULL THEN b.true_repayment_time ELSE a.true_repayment_time END AS true_repayment_time,
+	CASE WHEN b.id IS NOT NULL THEN b.loan_time ELSE a.loan_time END AS loan_time,
+	CASE WHEN b.id IS NOT NULL THEN b.interest_day ELSE a.interest_day END AS interest_day,
+	CASE WHEN b.id IS NOT NULL THEN b.apr ELSE a.apr END AS apr,
+	CASE WHEN b.id IS NOT NULL THEN b.loan_day ELSE a.loan_day END AS loan_day,
+	CASE WHEN b.id IS NOT NULL THEN b.apply_repayment_time ELSE a.apply_repayment_time END AS apply_repayment_time,
+	CASE WHEN b.id IS NOT NULL THEN b.interest_time ELSE a.interest_time END AS interest_time,
+	CASE WHEN b.id IS NOT NULL THEN b.true_total_money ELSE a.true_total_money END AS true_total_money,
+	CASE WHEN b.id IS NOT NULL THEN b.debit_times ELSE a.debit_times END AS debit_times,
+	CASE WHEN b.id IS NOT NULL THEN b.current_debit_money ELSE a.current_debit_money END AS current_debit_money,
+	CASE WHEN b.id IS NOT NULL THEN b.is_overdue ELSE a.is_overdue END AS is_overdue,
+	CASE WHEN b.id IS NOT NULL THEN b.overdue_day ELSE a.overdue_day END AS overdue_day,
+	CASE WHEN b.id IS NOT NULL THEN b.coupon_id ELSE a.coupon_id END AS coupon_id,
+	CASE WHEN b.id IS NOT NULL THEN b.coupon_money ELSE a.coupon_money END AS coupon_money,
+	CASE WHEN b.id IS NOT NULL THEN b.user_book ELSE a.user_book END AS user_book,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_loan_order_repayment a 
+FULL OUTER JOIN odps_user_loan_order_repayment_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_loan_order_repayment_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, order_id, principal, interests, late_day, late_fee, plan_repayment_time, plan_fee_time, operator_name, status, remark, created_at, updated_at, total_money, card_id, true_repayment_time, loan_time, interest_day, apr, loan_day, apply_repayment_time, interest_time, true_total_money, debit_times, current_debit_money, is_overdue, overdue_day, coupon_id, coupon_money, user_book 
+FROM odps_user_loan_order_repayment_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_loan_order_repayment_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_loan_order_repayment_kz_${bdp.system.bizdate} LIKE odps_user_loan_order_repayment;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_loan_order_repayment_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, order_id, principal, interests, late_day, late_fee, plan_repayment_time, plan_fee_time, operator_name, status, remark, created_at, updated_at, total_money, card_id, true_repayment_time, loan_time, interest_day, apr, loan_day, apply_repayment_time, interest_time, true_total_money, debit_times, current_debit_money, is_overdue, overdue_day, coupon_id, coupon_money, user_book, pt
+FROM odps_user_loan_order_repayment;
