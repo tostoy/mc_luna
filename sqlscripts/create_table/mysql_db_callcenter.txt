@@ -1,0 +1,83 @@
+CREATE TABLE odps_loan_collection_order (
+	id BIGINT COMMENT '',
+	client_id BIGINT COMMENT '借贷方 1现金卡  2分期卡...',
+	user_id BIGINT COMMENT '借款人ID',
+	user_loan_order_id BIGINT COMMENT '借款记录ID',
+	sync_plan_fee_time BIGINT COMMENT '借款应还时间',
+	sync_true_repayment_time BIGINT COMMENT '实际还款时间',
+	user_loan_order_repayment_id BIGINT COMMENT '还款明细ID',
+	dispatch_way BIGINT COMMENT '派单方案 11现金卡原分案逻辑 12现金卡循环分案',
+	dispatch_name STRING COMMENT '派单人',
+	dispatch_time BIGINT COMMENT '派单时间',
+	current_collection_admin_user_id BIGINT COMMENT '当前催收员ID',
+	current_overdue_level BIGINT COMMENT '当前逾期等级',
+	s1_approve_id BIGINT COMMENT 's1审批人ID',
+	s2_approve_id BIGINT COMMENT 's2审批人ID',
+	s3_approve_id BIGINT COMMENT 's3审批人ID',
+	s4_approve_id BIGINT COMMENT 's4审批人ID',
+	status BIGINT COMMENT '催收状态',
+	promise_repayment_time BIGINT COMMENT '承诺还款时间',
+	last_collection_time BIGINT COMMENT '最后催收时间',
+	next_loan_advice BIGINT COMMENT '',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	operator_name STRING COMMENT '操作人',
+	remark STRING COMMENT '备注',
+	outside_person BIGINT COMMENT '',
+	before_status BIGINT COMMENT '',
+	outside BIGINT COMMENT '委外机构ID',
+	renew_status BIGINT COMMENT '',
+	current_overdue_group STRING COMMENT '',
+	last_overdue_group STRING COMMENT '上次催收组',
+	s5_approve_id BIGINT COMMENT '',
+	s6_approve_id BIGINT COMMENT '',
+	has_payed_money BIGINT COMMENT '',
+	collection_result BIGINT COMMENT '催收结果',
+	next_follow_time BIGINT COMMENT '下次跟进时间',
+	tag STRING COMMENT '催单标签，用于分类、测试等场景',
+	last_operate_id BIGINT COMMENT '催收订单最近一笔的操作ID',
+	last_operate_status BIGINT COMMENT '操作状态 0催收中 1停催 2审核中(申请已还款) 3审核成功(申请已还款) 4审核失败(申请已还款) 5操作成功(申请已还款)',
+	display_status BIGINT COMMENT '显示给催收人员 默认1显示 0不显示',
+	principal BIGINT COMMENT '本金，单位为分'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+CREATE TABLE odps_loan_collection_record_new (
+	id BIGINT COMMENT 'id',
+	order_id BIGINT COMMENT '催单ID',
+	operator BIGINT COMMENT '催收操作人ID',
+	contact_id BIGINT COMMENT '联系人ID',
+	contact_type BIGINT COMMENT '联系人类型 0: 紧急联系人 1:通讯录联系人',
+	contact_name STRING COMMENT '联系人姓名',
+	relation STRING COMMENT '联系人关系',
+	contact_phone STRING COMMENT '联系人电话',
+	stress_level BIGINT COMMENT '施压等级',
+	order_level BIGINT COMMENT '当前催收等级',
+	order_state BIGINT COMMENT '当前催收状态',
+	operate_type BIGINT COMMENT '催收类型',
+	operate_source BIGINT COMMENT '催收方式, 催收类型的子类, 11手工拨号 12云呼拨号',
+	operate_id BIGINT COMMENT '催收方式的关联id',
+	operate_at BIGINT COMMENT '催收时间',
+	content STRING COMMENT '催收内容',
+	created_at BIGINT COMMENT '创建时间',
+	updated_at BIGINT COMMENT '更新时间',
+	remark STRING COMMENT '备注（以备催收人员查阅）',
+	promise_repayment_time BIGINT COMMENT '承诺还款时间',
+	collection_result BIGINT COMMENT '催收结果',
+	next_follow_time BIGINT COMMENT '下次跟进时间'
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+
+

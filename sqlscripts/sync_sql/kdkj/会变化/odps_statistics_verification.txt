@@ -1,0 +1,71 @@
+-- 创建目标表
+CREATE TABLE odps_statistics_verification LIKE odps_statistics_verification_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_statistics_verification PARTITION (pt)
+SELECT 
+id, x_date, reg_num, realname_num, contacts_list_num, zmxy_num, jxl_num, bind_card_num, alipay_num, public_funds_num, unapply_num, apply_num, apply_success_num, apply_fail_num, real_work_num, all_verif_num, some_verif_num, created_at, updated_at, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_statistics_verification_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_statistics_verification_tmp;
+SELECT COUNT(*) FROM  odps_statistics_verification;
+
+--- 创建增量表
+CREATE TABLE odps_statistics_verification_inc LIKE odps_statistics_verification;
+
+
+--- 删除历史表
+ALTER TABLE odps_social_security_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_statistics_verification PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.x_date ELSE a.x_date END AS x_date,
+	CASE WHEN b.id IS NOT NULL THEN b.reg_num ELSE a.reg_num END AS reg_num,
+	CASE WHEN b.id IS NOT NULL THEN b.realname_num ELSE a.realname_num END AS realname_num,
+	CASE WHEN b.id IS NOT NULL THEN b.contacts_list_num ELSE a.contacts_list_num END AS contacts_list_num,
+	CASE WHEN b.id IS NOT NULL THEN b.zmxy_num ELSE a.zmxy_num END AS zmxy_num,
+	CASE WHEN b.id IS NOT NULL THEN b.jxl_num ELSE a.jxl_num END AS jxl_num,
+	CASE WHEN b.id IS NOT NULL THEN b.bind_card_num ELSE a.bind_card_num END AS bind_card_num,
+	CASE WHEN b.id IS NOT NULL THEN b.alipay_num ELSE a.alipay_num END AS alipay_num,
+	CASE WHEN b.id IS NOT NULL THEN b.public_funds_num ELSE a.public_funds_num END AS public_funds_num,
+	CASE WHEN b.id IS NOT NULL THEN b.unapply_num ELSE a.unapply_num END AS unapply_num,
+	CASE WHEN b.id IS NOT NULL THEN b.apply_num ELSE a.apply_num END AS apply_num,
+	CASE WHEN b.id IS NOT NULL THEN b.apply_success_num ELSE a.apply_success_num END AS apply_success_num,
+	CASE WHEN b.id IS NOT NULL THEN b.apply_fail_num ELSE a.apply_fail_num END AS apply_fail_num,
+	CASE WHEN b.id IS NOT NULL THEN b.real_work_num ELSE a.real_work_num END AS real_work_num,
+	CASE WHEN b.id IS NOT NULL THEN b.all_verif_num ELSE a.all_verif_num END AS all_verif_num,
+	CASE WHEN b.id IS NOT NULL THEN b.some_verif_num ELSE a.some_verif_num END AS some_verif_num,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_statistics_verification a 
+FULL OUTER JOIN odps_statistics_verification_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_statistics_verification_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, x_date, reg_num, realname_num, contacts_list_num, zmxy_num, jxl_num, bind_card_num, alipay_num, public_funds_num, unapply_num, apply_num, apply_success_num, apply_fail_num, real_work_num, all_verif_num, some_verif_num, created_at, updated_at
+FROM odps_statistics_verification_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_statistics_verification_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_statistics_verification_kz_${bdp.system.bizdate} LIKE odps_statistics_verification;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_statistics_verification_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, x_date, reg_num, realname_num, contacts_list_num, zmxy_num, jxl_num, bind_card_num, alipay_num, public_funds_num, unapply_num, apply_num, apply_success_num, apply_fail_num, real_work_num, all_verif_num, some_verif_num, created_at, updated_at, pt
+FROM odps_statistics_verification;

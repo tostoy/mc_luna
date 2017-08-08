@@ -1,0 +1,11 @@
+-- 创建目标表
+CREATE TABLE odps_user_register_info LIKE odps_user_register_info_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_register_info PARTITION (pt)
+SELECT id, user_id, clientType, osVersion, appVersion, deviceName, created_at, appMarket, deviceId, x_date, source, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_register_info_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_register_info_tmp;
+SELECT COUNT(*) FROM  odps_user_register_info;

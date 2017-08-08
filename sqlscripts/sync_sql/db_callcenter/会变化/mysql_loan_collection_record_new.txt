@@ -1,0 +1,70 @@
+-- 创建目标表
+CREATE TABLE odps_loan_collection_record_new LIKE odps_loan_collection_record_new_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_loan_collection_record_new PARTITION (pt)
+SELECT id, order_id, operator, contact_id, contact_type, contact_name, relation, contact_phone, stress_level, order_level, order_state, operate_type, operate_source, operate_id, operate_at, content, created_at, updated_at, remark, promise_repayment_time, collection_result, next_follow_time, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_loan_collection_record_new_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_loan_collection_record_new_tmp;
+SELECT COUNT(*) FROM  odps_loan_collection_record_new;
+
+--- 创建增量表
+CREATE TABLE odps_loan_collection_record_new_inc LIKE odps_loan_collection_record_new;
+
+
+--- 删除历史表
+ALTER TABLE odps_loan_collection_record_new_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_loan_collection_record_new PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.order_id ELSE a.order_id END AS order_id,
+	CASE WHEN b.id IS NOT NULL THEN b.operator ELSE a.operator END AS operator,
+	CASE WHEN b.id IS NOT NULL THEN b.contact_id ELSE a.contact_id END AS contact_id,
+	CASE WHEN b.id IS NOT NULL THEN b.contact_type ELSE a.contact_type END AS contact_type,
+	CASE WHEN b.id IS NOT NULL THEN b.contact_name ELSE a.contact_name END AS contact_name,
+	CASE WHEN b.id IS NOT NULL THEN b.relation ELSE a.relation END AS relation,
+	CASE WHEN b.id IS NOT NULL THEN b.contact_phone ELSE a.contact_phone END AS contact_phone,
+	CASE WHEN b.id IS NOT NULL THEN b.stress_level ELSE a.stress_level END AS stress_level,
+	CASE WHEN b.id IS NOT NULL THEN b.order_level ELSE a.order_level END AS order_level,
+	CASE WHEN b.id IS NOT NULL THEN b.order_state ELSE a.order_state END AS order_state,
+	CASE WHEN b.id IS NOT NULL THEN b.operate_type ELSE a.operate_type END AS operate_type,
+	CASE WHEN b.id IS NOT NULL THEN b.operate_source ELSE a.operate_source END AS operate_source,
+	CASE WHEN b.id IS NOT NULL THEN b.operate_id ELSE a.operate_id END AS operate_id,
+	CASE WHEN b.id IS NOT NULL THEN b.operate_at ELSE a.operate_at END AS operate_at,
+	CASE WHEN b.id IS NOT NULL THEN b.content ELSE a.content END AS content,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.remark ELSE a.remark END AS remark,
+	CASE WHEN b.id IS NOT NULL THEN b.promise_repayment_time ELSE a.promise_repayment_time END AS promise_repayment_time,
+	CASE WHEN b.id IS NOT NULL THEN b.collection_result ELSE a.collection_result END AS collection_result,
+	CASE WHEN b.id IS NOT NULL THEN b.next_follow_time ELSE a.next_follow_time END AS next_follow_time,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_loan_collection_record_new a 
+FULL OUTER JOIN odps_loan_collection_record_new_inc b
+ON a.id  = b.id ;
+
+--- 增量数据导入到增量列表集合中
+INSERT INTO TABLE odps_loan_collection_record_new_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, order_id, operator, contact_id, contact_type, contact_name, relation, contact_phone, stress_level, order_level, order_state, operate_type, operate_source, operate_id, operate_at, content, created_at, updated_at, remark, promise_repayment_time, collection_result, next_follow_time
+FROM odps_loan_collection_record_new_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+--- 删除无用数据
+ALTER TABLE odps_loan_collection_record_new_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+-- 创建快照目标表
+CREATE TABLE odps_loan_collection_record_new_kz_${bdp.system.bizdate} LIKE odps_loan_collection_record_new;
+
+-- 将数据导入到快照表中
+INSERT OVERWRITE TABLE odps_loan_collection_record_new_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, order_id, operator, contact_id, contact_type, contact_name, relation, contact_phone, stress_level, order_level, order_state, operate_type, operate_source, operate_id, operate_at, content, created_at, updated_at, remark, promise_repayment_time, collection_result, next_follow_time, pt
+FROM odps_loan_collection_record_new;

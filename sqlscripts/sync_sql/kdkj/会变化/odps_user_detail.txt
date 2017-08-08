@@ -1,0 +1,80 @@
+-- 创建目标表
+CREATE TABLE odps_user_detail LIKE odps_user_detail_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_detail PARTITION (pt)
+SELECT 
+id, user_id, username, reg_client_type, reg_app_version, reg_device_name, reg_os_version, reg_app_market, qr_code, invite_type, exclusive_type, invite_key, intergration, phone_address, phone_carrier, user_address, self_selection, created_at, company_id, company_name, company_email, contacts_type, contacts_name, contacts_mobile, company_phone, company_address, updated_at, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_detail_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_detail_tmp;
+SELECT COUNT(*) FROM  odps_user_detail;
+
+--- 创建增量表
+CREATE TABLE odps_user_detail_inc LIKE odps_user_detail;
+
+--- 创建增量表
+CREATE TABLE odps_user_detail_inc_list LIKE odps_user_detail;
+
+--- 删除历史表
+ALTER TABLE odps_period_user_credit_total_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_detail PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.username ELSE a.username END AS username,
+	CASE WHEN b.id IS NOT NULL THEN b.reg_client_type ELSE a.reg_client_type END AS reg_client_type,
+	CASE WHEN b.id IS NOT NULL THEN b.reg_app_version ELSE a.reg_app_version END AS reg_app_version,
+	CASE WHEN b.id IS NOT NULL THEN b.reg_device_name ELSE a.reg_device_name END AS reg_device_name,
+	CASE WHEN b.id IS NOT NULL THEN b.reg_os_version ELSE a.reg_os_version END AS reg_os_version,
+	CASE WHEN b.id IS NOT NULL THEN b.reg_app_market ELSE a.reg_app_market END AS reg_app_market,
+	CASE WHEN b.id IS NOT NULL THEN b.qr_code ELSE a.qr_code END AS qr_code,
+	CASE WHEN b.id IS NOT NULL THEN b.invite_type ELSE a.invite_type END AS invite_type,
+	CASE WHEN b.id IS NOT NULL THEN b.exclusive_type ELSE a.exclusive_type END AS exclusive_type,
+	CASE WHEN b.id IS NOT NULL THEN b.invite_key ELSE a.invite_key END AS invite_key,
+	CASE WHEN b.id IS NOT NULL THEN b.intergration ELSE a.intergration END AS intergration,
+	CASE WHEN b.id IS NOT NULL THEN b.phone_address ELSE a.phone_address END AS phone_address,
+	CASE WHEN b.id IS NOT NULL THEN b.phone_carrier ELSE a.phone_carrier END AS phone_carrier,
+	CASE WHEN b.id IS NOT NULL THEN b.user_address ELSE a.user_address END AS user_address,
+	CASE WHEN b.id IS NOT NULL THEN b.self_selection ELSE a.self_selection END AS self_selection,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.company_id ELSE a.company_id END AS company_id,
+	CASE WHEN b.id IS NOT NULL THEN b.company_name ELSE a.company_name END AS company_name,
+	CASE WHEN b.id IS NOT NULL THEN b.company_email ELSE a.company_email END AS company_email,
+	CASE WHEN b.id IS NOT NULL THEN b.contacts_type ELSE a.contacts_type END AS contacts_type,
+	CASE WHEN b.id IS NOT NULL THEN b.contacts_name ELSE a.contacts_name END AS contacts_name,
+	CASE WHEN b.id IS NOT NULL THEN b.contacts_mobile ELSE a.contacts_mobile END AS contacts_mobile,
+	CASE WHEN b.id IS NOT NULL THEN b.company_phone ELSE a.company_phone END AS company_phone,
+	CASE WHEN b.id IS NOT NULL THEN b.company_address ELSE a.company_address END AS company_address,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_detail a 
+FULL OUTER JOIN odps_user_detail_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_detail_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, username, reg_client_type, reg_app_version, reg_device_name, reg_os_version, reg_app_market, qr_code, invite_type, exclusive_type, invite_key, intergration, phone_address, phone_carrier, user_address, self_selection, created_at, company_id, company_name, company_email, contacts_type, contacts_name, contacts_mobile, company_phone, company_address, updated_at
+FROM odps_user_detail_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_detail_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_detail_kz_${bdp.system.bizdate} LIKE odps_user_detail;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_detail_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, username, reg_client_type, reg_app_version, reg_device_name, reg_os_version, reg_app_market, qr_code, invite_type, exclusive_type, invite_key, intergration, phone_address, phone_carrier, user_address, self_selection, created_at, company_id, company_name, company_email, contacts_type, contacts_name, contacts_mobile, company_phone, company_address, updated_at, pt
+FROM odps_user_detail;

@@ -1,0 +1,88 @@
+-- 创建目标表
+CREATE TABLE odps_loan_collection_order LIKE odps_loan_collection_order_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_loan_collection_order PARTITION (pt)
+SELECT id, client_id, user_id, user_loan_order_id, sync_plan_fee_time, sync_true_repayment_time, user_loan_order_repayment_id, dispatch_way, dispatch_name, dispatch_time, current_collection_admin_user_id, current_overdue_level, s1_approve_id, s2_approve_id, s3_approve_id, s4_approve_id, status, promise_repayment_time, last_collection_time, next_loan_advice, created_at, updated_at, operator_name, remark, outside_person, before_status, outside, renew_status, current_overdue_group, last_overdue_group, s5_approve_id, s6_approve_id, has_payed_money, collection_result, next_follow_time, tag, last_operate_id, last_operate_status, display_status, principal, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_loan_collection_order_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_loan_collection_order_tmp;
+SELECT COUNT(*) FROM  odps_loan_collection_order;
+
+--- 创建增量表
+CREATE TABLE odps_loan_collection_order_inc LIKE odps_loan_collection_order;
+
+
+--- 删除历史表
+ALTER TABLE odps_loan_collection_order_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_loan_collection_order PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.client_id ELSE a.client_id END AS client_id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_loan_order_id ELSE a.user_loan_order_id END AS user_loan_order_id,
+	CASE WHEN b.id IS NOT NULL THEN b.sync_plan_fee_time ELSE a.sync_plan_fee_time END AS sync_plan_fee_time,
+	CASE WHEN b.id IS NOT NULL THEN b.sync_true_repayment_time ELSE a.sync_true_repayment_time END AS sync_true_repayment_time,
+	CASE WHEN b.id IS NOT NULL THEN b.user_loan_order_repayment_id ELSE a.user_loan_order_repayment_id END AS user_loan_order_repayment_id,
+	CASE WHEN b.id IS NOT NULL THEN b.dispatch_way ELSE a.dispatch_way END AS dispatch_way,
+	CASE WHEN b.id IS NOT NULL THEN b.dispatch_name ELSE a.dispatch_name END AS dispatch_name,
+	CASE WHEN b.id IS NOT NULL THEN b.dispatch_time ELSE a.dispatch_time END AS dispatch_time,
+	CASE WHEN b.id IS NOT NULL THEN b.current_collection_admin_user_id ELSE a.current_collection_admin_user_id END AS current_collection_admin_user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.current_overdue_level ELSE a.current_overdue_level END AS current_overdue_level,
+	CASE WHEN b.id IS NOT NULL THEN b.s1_approve_id ELSE a.s1_approve_id END AS s1_approve_id,
+	CASE WHEN b.id IS NOT NULL THEN b.s2_approve_id ELSE a.s2_approve_id END AS s2_approve_id,
+	CASE WHEN b.id IS NOT NULL THEN b.s3_approve_id ELSE a.s3_approve_id END AS s3_approve_id,
+	CASE WHEN b.id IS NOT NULL THEN b.s4_approve_id ELSE a.s4_approve_id END AS s4_approve_id,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.promise_repayment_time ELSE a.promise_repayment_time END AS promise_repayment_time,
+	CASE WHEN b.id IS NOT NULL THEN b.last_collection_time ELSE a.last_collection_time END AS last_collection_time,
+	CASE WHEN b.id IS NOT NULL THEN b.next_loan_advice ELSE a.next_loan_advice END AS next_loan_advice,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.operator_name ELSE a.operator_name END AS operator_name,
+	CASE WHEN b.id IS NOT NULL THEN b.remark ELSE a.remark END AS remark,
+	CASE WHEN b.id IS NOT NULL THEN b.outside_person ELSE a.outside_person END AS outside_person,
+	CASE WHEN b.id IS NOT NULL THEN b.before_status ELSE a.before_status END AS before_status,
+	CASE WHEN b.id IS NOT NULL THEN b.outside ELSE a.outside END AS outside,
+	CASE WHEN b.id IS NOT NULL THEN b.renew_status ELSE a.renew_status END AS renew_status,
+	CASE WHEN b.id IS NOT NULL THEN b.current_overdue_group ELSE a.current_overdue_group END AS current_overdue_group,
+	CASE WHEN b.id IS NOT NULL THEN b.last_overdue_group ELSE a.last_overdue_group END AS last_overdue_group,
+	CASE WHEN b.id IS NOT NULL THEN b.s5_approve_id ELSE a.s5_approve_id END AS s5_approve_id,
+	CASE WHEN b.id IS NOT NULL THEN b.s6_approve_id ELSE a.s6_approve_id END AS s6_approve_id,
+	CASE WHEN b.id IS NOT NULL THEN b.has_payed_money ELSE a.has_payed_money END AS has_payed_money,
+	CASE WHEN b.id IS NOT NULL THEN b.collection_result ELSE a.collection_result END AS collection_result,
+	CASE WHEN b.id IS NOT NULL THEN b.next_follow_time ELSE a.next_follow_time END AS next_follow_time,
+	CASE WHEN b.id IS NOT NULL THEN b.tag ELSE a.tag END AS tag,
+	CASE WHEN b.id IS NOT NULL THEN b.last_operate_id ELSE a.last_operate_id END AS last_operate_id,
+	CASE WHEN b.id IS NOT NULL THEN b.last_operate_status ELSE a.last_operate_status END AS last_operate_status,
+	CASE WHEN b.id IS NOT NULL THEN b.display_status ELSE a.display_status END AS display_status,
+	CASE WHEN b.id IS NOT NULL THEN b.principal ELSE a.principal END AS principal,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_loan_collection_order a 
+FULL OUTER JOIN odps_loan_collection_order_inc b
+ON a.id  = b.id ;
+
+--- 增量数据导入到增量列表集合中
+INSERT INTO TABLE odps_loan_collection_order_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, client_id, user_id, user_loan_order_id, sync_plan_fee_time, sync_true_repayment_time, user_loan_order_repayment_id, dispatch_way, dispatch_name, dispatch_time, current_collection_admin_user_id, current_overdue_level, s1_approve_id, s2_approve_id, s3_approve_id, s4_approve_id, status, promise_repayment_time, last_collection_time, next_loan_advice, created_at, updated_at, operator_name, remark, outside_person, before_status, outside, renew_status, current_overdue_group, last_overdue_group, s5_approve_id, s6_approve_id, has_payed_money, collection_result, next_follow_time, tag, last_operate_id, last_operate_status, display_status, principal
+FROM odps_loan_collection_order_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+--- 删除无用数据
+ALTER TABLE odps_loan_collection_order_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+-- 创建快照目标表
+CREATE TABLE odps_loan_collection_order_kz_${bdp.system.bizdate} LIKE odps_loan_collection_order;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_loan_collection_order_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, client_id, user_id, user_loan_order_id, sync_plan_fee_time, sync_true_repayment_time, user_loan_order_repayment_id, dispatch_way, dispatch_name, dispatch_time, current_collection_admin_user_id, current_overdue_level, s1_approve_id, s2_approve_id, s3_approve_id, s4_approve_id, status, promise_repayment_time, last_collection_time, next_loan_advice, created_at, updated_at, operator_name, remark, outside_person, before_status, outside, renew_status, current_overdue_group, last_overdue_group, s5_approve_id, s6_approve_id, has_payed_money, collection_result, next_follow_time, tag, last_operate_id, last_operate_status, display_status, principal, pt
+FROM odps_loan_collection_order;

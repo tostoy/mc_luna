@@ -1,0 +1,18 @@
+-- 创建目标表
+CREATE TABLE odps_user_update_field_log LIKE odps_user_update_field_log_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_update_field_log PARTITION (pt)
+SELECT id,user_id,field,table_name,field_before,field_after,created_at,updated_at, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_update_field_log_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_update_field_log_tmp;
+SELECT COUNT(*) FROM  odps_user_update_field_log;
+
+--- 创建增量表
+CREATE TABLE odps_user_update_field_log_inc LIKE odps_user_update_field_log;
+
+
+--- 删除历史表
+ALTER TABLE odps_user_update_field_log_tmp DROP IF EXISTS PARTITION (pt='history'); 

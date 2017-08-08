@@ -1,0 +1,62 @@
+-- 创建目标表
+CREATE TABLE odps_user_proof_materia LIKE odps_user_proof_materia_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_proof_materia PARTITION (pt)
+SELECT 
+id, user_id, type, pic_name, url, created_at, updated_at, status, ocr_type, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_proof_materia_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_proof_materia_tmp;
+SELECT COUNT(*) FROM  odps_user_proof_materia;
+
+--- 创建增量表
+CREATE TABLE odps_user_proof_materia_inc LIKE odps_user_proof_materia;
+
+--- 创建增量集合表
+CREATE TABLE odps_user_proof_materia_inc_list LIKE odps_user_proof_materia;
+
+--- 删除历史表
+ALTER TABLE odps_user_proof_materia_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_proof_materia PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.type ELSE a.type END AS type,
+	CASE WHEN b.id IS NOT NULL THEN b.pic_name ELSE a.pic_name END AS pic_name,
+	CASE WHEN b.id IS NOT NULL THEN b.url ELSE a.url END AS url,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.ocr_type ELSE a.ocr_type END AS ocr_type,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_proof_materia a 
+FULL OUTER JOIN odps_user_proof_materia_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_proof_materia_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, type, pic_name, url, created_at, updated_at, status, ocr_type
+FROM odps_user_proof_materia_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_proof_materia_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_proof_materia_kz_${bdp.system.bizdate} LIKE odps_user_proof_materia;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_proof_materia_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, type, pic_name, url, created_at, updated_at, status, ocr_type, pt
+FROM odps_user_proof_materia;

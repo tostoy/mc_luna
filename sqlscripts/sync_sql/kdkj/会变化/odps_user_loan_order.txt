@@ -1,0 +1,84 @@
+-- 创建目标表
+CREATE TABLE odps_user_loan_order LIKE odps_user_loan_order_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_loan_order PARTITION (pt)
+SELECT 
+id, user_id, order_type, money_amount, apr, loan_method, loan_term, loan_interests, operator_name, remark, created_at, updated_at, status, order_time, loan_time, trail_time, current_interests, late_fee, late_fee_apr, card_id, counter_fee, reason_remark, is_first, auto_risk_check_status, is_hit_risk_rule, sub_order_type, is_user_confirm, from_app, coupon_id, tree, fund_id, card_type, temp_check_status, post_interest, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_loan_order_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_loan_order_tmp;
+SELECT COUNT(*) FROM  odps_user_loan_order;
+
+--- 创建增量表
+CREATE TABLE odps_user_loan_order_inc LIKE odps_user_loan_order;
+
+--- 删除历史表
+ALTER TABLE odps_user_loan_order_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_loan_order PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.order_type ELSE a.order_type END AS order_type,
+	CASE WHEN b.id IS NOT NULL THEN b.money_amount ELSE a.money_amount END AS money_amount,
+	CASE WHEN b.id IS NOT NULL THEN b.apr ELSE a.apr END AS apr,
+	CASE WHEN b.id IS NOT NULL THEN b.loan_method ELSE a.loan_method END AS loan_method,
+	CASE WHEN b.id IS NOT NULL THEN b.loan_term ELSE a.loan_term END AS loan_term,
+	CASE WHEN b.id IS NOT NULL THEN b.loan_interests ELSE a.loan_interests END AS loan_interests,
+	CASE WHEN b.id IS NOT NULL THEN b.operator_name ELSE a.operator_name END AS operator_name,
+	CASE WHEN b.id IS NOT NULL THEN b.remark ELSE a.remark END AS remark,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.order_time ELSE a.order_time END AS order_time,
+	CASE WHEN b.id IS NOT NULL THEN b.loan_time ELSE a.loan_time END AS loan_time,
+	CASE WHEN b.id IS NOT NULL THEN b.trail_time ELSE a.trail_time END AS trail_time,
+	CASE WHEN b.id IS NOT NULL THEN b.current_interests ELSE a.current_interests END AS current_interests,
+	CASE WHEN b.id IS NOT NULL THEN b.late_fee ELSE a.late_fee END AS late_fee,
+	CASE WHEN b.id IS NOT NULL THEN b.late_fee_apr ELSE a.late_fee_apr END AS late_fee_apr,
+	CASE WHEN b.id IS NOT NULL THEN b.card_id ELSE a.card_id END AS card_id,
+	CASE WHEN b.id IS NOT NULL THEN b.counter_fee ELSE a.counter_fee END AS counter_fee,
+	CASE WHEN b.id IS NOT NULL THEN b.reason_remark ELSE a.reason_remark END AS reason_remark,
+	CASE WHEN b.id IS NOT NULL THEN b.is_first ELSE a.is_first END AS is_first,
+	CASE WHEN b.id IS NOT NULL THEN b.auto_risk_check_status ELSE a.auto_risk_check_status END AS auto_risk_check_status,
+	CASE WHEN b.id IS NOT NULL THEN b.is_hit_risk_rule ELSE a.is_hit_risk_rule END AS is_hit_risk_rule,
+	CASE WHEN b.id IS NOT NULL THEN b.sub_order_type ELSE a.sub_order_type END AS sub_order_type,
+	CASE WHEN b.id IS NOT NULL THEN b.is_user_confirm ELSE a.is_user_confirm END AS is_user_confirm,
+	CASE WHEN b.id IS NOT NULL THEN b.from_app ELSE a.from_app END AS from_app,
+	CASE WHEN b.id IS NOT NULL THEN b.coupon_id ELSE a.coupon_id END AS coupon_id,
+	CASE WHEN b.id IS NOT NULL THEN b.tree ELSE a.tree END AS tree,
+	CASE WHEN b.id IS NOT NULL THEN b.fund_id ELSE a.fund_id END AS fund_id,
+	CASE WHEN b.id IS NOT NULL THEN b.card_type ELSE a.card_type END AS card_type,
+	CASE WHEN b.id IS NOT NULL THEN b.temp_check_status ELSE a.temp_check_status END AS temp_check_status,
+	CASE WHEN b.id IS NOT NULL THEN b.post_interest ELSE a.post_interest END AS post_interest,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_loan_order a 
+FULL OUTER JOIN odps_user_loan_order_inc b
+ON a.id  = b.id ;
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_loan_order_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, order_type, money_amount, apr, loan_method, loan_term, loan_interests, operator_name, remark, created_at, updated_at, status, order_time, loan_time, trail_time, current_interests, late_fee, late_fee_apr, card_id, counter_fee, reason_remark, is_first, auto_risk_check_status, is_hit_risk_rule, sub_order_type, is_user_confirm, from_app, coupon_id, tree, fund_id, card_type, temp_check_status, post_interest
+FROM odps_user_loan_order_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+--- 删除无用数据
+ALTER TABLE odps_user_loan_order_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_loan_order_kz_${bdp.system.bizdate} LIKE odps_user_loan_order;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_loan_order_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, order_type, money_amount, apr, loan_method, loan_term, loan_interests, operator_name, remark, created_at, updated_at, status, order_time, loan_time, trail_time, current_interests, late_fee, late_fee_apr, card_id, counter_fee, reason_remark, is_first, auto_risk_check_status, is_hit_risk_rule, sub_order_type, is_user_confirm, from_app, coupon_id, tree, fund_id, card_type, temp_check_status, post_interest, pt
+FROM odps_user_loan_order;

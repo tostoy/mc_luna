@@ -1,0 +1,9 @@
+CREATE TABLE odps_loan_collection_order_features (
+	x_date BIGINT,
+	user_id BIGINT COMMENT '用户id',
+	advice_refuse_cnt_p3m BIGINT COMMENT '用户名',
+	advice_audit_cnt_p3m BIGINT COMMENT '用户名',
+)
+PARTITIONED BY (
+	pt STRING
+);

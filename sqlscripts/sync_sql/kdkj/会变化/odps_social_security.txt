@@ -1,0 +1,60 @@
+-- 创建目标表
+CREATE TABLE odps_social_security LIKE odps_social_security_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_social_security PARTITION (pt)
+SELECT 
+id, user_id, city, status, message, x_data, created_at, updated_at, open_id, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_social_security_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_social_security_tmp;
+SELECT COUNT(*) FROM  odps_social_security;
+
+--- 创建增量表
+CREATE TABLE odps_social_security_inc LIKE odps_social_security;
+
+
+
+--- 删除历史表
+ALTER TABLE odps_social_security_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_social_security PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.city ELSE a.city END AS city,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.message ELSE a.message END AS message,
+	CASE WHEN b.id IS NOT NULL THEN b.data ELSE a.data END AS data,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.open_id ELSE a.open_id END AS open_id,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_social_security a 
+FULL OUTER JOIN odps_social_security_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_social_security_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, city, status, message, x_data, created_at, updated_at, open_id
+FROM odps_social_security_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_social_security_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_social_security_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, city, status, message, x_data, created_at, updated_at, open_id
+FROM odps_social_security_inc 
+WHERE pt='${bdp.system.bizdate}';

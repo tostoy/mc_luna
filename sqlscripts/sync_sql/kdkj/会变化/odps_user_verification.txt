@@ -1,0 +1,80 @@
+-- 创建目标表
+CREATE TABLE odps_user_verification LIKE odps_user_verification_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_verification PARTITION (pt)
+SELECT 
+id, user_id, real_pay_pwd_status, real_verify_status, real_work_status, real_contact_status, real_bind_bank_card_status, real_zmxy_status, updated_at, created_at, operator_name, remark, status, is_quota_novice, is_fzd_novice, real_work_fzd_status, real_credit_card_status, is_first_loan, real_jxl_status, real_more_status, real_alipay_status, real_yys_status, real_taobao_status, real_jd_status, real_accredit_status, real_online_bank_status, real_wy_status, real_social_security_status, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_verification_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_verification_tmp;
+SELECT COUNT(*) FROM  odps_user_verification;
+
+--- 创建增量表
+CREATE TABLE odps_user_verification_inc LIKE odps_user_verification;
+
+--- 删除历史表
+ALTER TABLE odps_user_verification_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_verification PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.real_pay_pwd_status ELSE a.real_pay_pwd_status END AS real_pay_pwd_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_verify_status ELSE a.real_verify_status END AS real_verify_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_work_status ELSE a.real_work_status END AS real_work_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_contact_status ELSE a.real_contact_status END AS real_contact_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_bind_bank_card_status ELSE a.real_bind_bank_card_status END AS real_bind_bank_card_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_zmxy_status ELSE a.real_zmxy_status END AS real_zmxy_status,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.operator_name ELSE a.operator_name END AS operator_name,
+	CASE WHEN b.id IS NOT NULL THEN b.remark ELSE a.remark END AS remark,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.is_quota_novice ELSE a.is_quota_novice END AS is_quota_novice,
+	CASE WHEN b.id IS NOT NULL THEN b.is_fzd_novice ELSE a.is_fzd_novice END AS is_fzd_novice,
+	CASE WHEN b.id IS NOT NULL THEN b.real_work_fzd_status ELSE a.real_work_fzd_status END AS real_work_fzd_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_credit_card_status ELSE a.real_credit_card_status END AS real_credit_card_status,
+	CASE WHEN b.id IS NOT NULL THEN b.is_first_loan ELSE a.is_first_loan END AS is_first_loan,
+	CASE WHEN b.id IS NOT NULL THEN b.real_jxl_status ELSE a.real_jxl_status END AS real_jxl_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_more_status ELSE a.real_more_status END AS real_more_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_alipay_status ELSE a.real_alipay_status END AS real_alipay_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_yys_status ELSE a.real_yys_status END AS real_yys_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_taobao_status ELSE a.real_taobao_status END AS real_taobao_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_jd_status ELSE a.real_jd_status END AS real_jd_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_accredit_status ELSE a.real_accredit_status END AS real_accredit_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_online_bank_status ELSE a.real_online_bank_status END AS real_online_bank_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_wy_status ELSE a.real_wy_status END AS real_wy_status,
+	CASE WHEN b.id IS NOT NULL THEN b.real_social_security_status ELSE a.real_social_security_status END AS real_social_security_status,
+	
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_verification a 
+FULL OUTER JOIN odps_user_verification_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_verification_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, real_pay_pwd_status, real_verify_status, real_work_status, real_contact_status, real_bind_bank_card_status, real_zmxy_status, updated_at, created_at, operator_name, remark, status, is_quota_novice, is_fzd_novice, real_work_fzd_status, real_credit_card_status, is_first_loan, real_jxl_status, real_more_status, real_alipay_status, real_yys_status, real_taobao_status, real_jd_status, real_accredit_status, real_online_bank_status, real_wy_status, real_social_security_status
+FROM odps_user_verification_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_verification_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_verification_kz_${bdp.system.bizdate} LIKE odps_user_verification;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_verification_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, real_pay_pwd_status, real_verify_status, real_work_status, real_contact_status, real_bind_bank_card_status, real_zmxy_status, updated_at, created_at, operator_name, remark, status, is_quota_novice, is_fzd_novice, real_work_fzd_status, real_credit_card_status, is_first_loan, real_jxl_status, real_more_status, real_alipay_status, real_yys_status, real_taobao_status, real_jd_status, real_accredit_status, real_online_bank_status, real_wy_status, real_social_security_status, pt
+FROM odps_user_verification;

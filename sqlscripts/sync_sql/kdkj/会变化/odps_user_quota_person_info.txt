@@ -1,0 +1,63 @@
+-- 创建目标表
+CREATE TABLE odps_user_quota_person_info LIKE odps_user_quota_person_info_tmp;
+
+--- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
+INSERT OVERWRITE TABLE odps_user_quota_person_info PARTITION (pt)
+SELECT 
+id, user_id, address, longitude, latitude, live_time_type, degrees, marriage, status, created_at, updated_at, address_distinct, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+FROM odps_user_quota_person_info_tmp;
+
+-- 验证数据总数
+SELECT COUNT(*) FROM  odps_user_quota_person_info_tmp;
+SELECT COUNT(*) FROM  odps_user_quota_person_info;
+
+--- 创建增量表
+CREATE TABLE odps_user_quota_person_info_inc LIKE odps_user_quota_person_info;
+
+--- 删除历史表
+ALTER TABLE odps_user_quota_person_info_tmp DROP IF EXISTS PARTITION (pt='history'); 
+
+
+
+--- 合并数据并根据数据的创建时间更新到指定分区中
+INSERT OVERWRITE TABLE odps_user_quota_person_info PARTITION (pt)
+SELECT  
+	CASE WHEN b.id IS NOT NULL THEN b.id ELSE a.id END AS id,
+	CASE WHEN b.id IS NOT NULL THEN b.user_id ELSE a.user_id END AS user_id,
+	CASE WHEN b.id IS NOT NULL THEN b.address ELSE a.address END AS address,
+	CASE WHEN b.id IS NOT NULL THEN b.longitude ELSE a.longitude END AS longitude,
+	CASE WHEN b.id IS NOT NULL THEN b.latitude ELSE a.latitude END AS latitude,
+	CASE WHEN b.id IS NOT NULL THEN b.live_time_type ELSE a.live_time_type END AS live_time_type,
+	CASE WHEN b.id IS NOT NULL THEN b.degrees ELSE a.degrees END AS degrees,
+	CASE WHEN b.id IS NOT NULL THEN b.marriage ELSE a.marriage END AS marriage,
+	CASE WHEN b.id IS NOT NULL THEN b.status ELSE a.status END AS status,
+	CASE WHEN b.id IS NOT NULL THEN b.created_at ELSE a.created_at END AS created_at,
+	CASE WHEN b.id IS NOT NULL THEN b.updated_at ELSE a.updated_at END AS updated_at,
+	CASE WHEN b.id IS NOT NULL THEN b.address_distinct ELSE a.address_distinct END AS address_distinct,
+	CASE WHEN b.id IS NOT NULL THEN TO_CHAR(FROM_UNIXTIME(b.created_at), 'yyyymmdd') ELSE TO_CHAR(FROM_UNIXTIME(a.created_at), 'yyyymmdd') END AS pt
+FROM
+odps_user_quota_person_info a 
+FULL OUTER JOIN odps_user_quota_person_info_inc b
+ON a.id  = b.id ;
+
+
+--- 增量数据导入到增量列表集合中
+INSERT OVERWRITE TABLE odps_user_quota_person_info_inc_list PARTITION (pt='${bdp.system.bizdate}') 
+SELECT 
+id, user_id, address, longitude, latitude, live_time_type, degrees, marriage, status, created_at, updated_at, address_distinct
+FROM odps_user_quota_person_info_inc 
+WHERE pt='${bdp.system.bizdate}';
+
+
+--- 删除无用数据
+ALTER TABLE odps_user_quota_person_info_inc DROP IF EXISTS PARTITION (pt='${bdp.system.bizdate}'); 
+
+
+-- 创建快照目标表
+CREATE TABLE odps_user_quota_person_info_kz_${bdp.system.bizdate} LIKE odps_user_quota_person_info;
+
+-- 将数据定时导入到快照表中
+INSERT OVERWRITE TABLE odps_user_quota_person_info_kz_${bdp.system.bizdate} PARTITION (pt) 
+SELECT 
+id, user_id, address, longitude, latitude, live_time_type, degrees, marriage, status, created_at, updated_at, address_distinct, pt
+FROM odps_user_quota_person_info;
