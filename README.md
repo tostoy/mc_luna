@@ -13,6 +13,6 @@ CREATE FUNCTION test_udf AS 'myudf.UDFPlusHello' USING 'mc_luna.jar';
 
 select mytest_udtf(bank_name,bank_name) from odps_ebank_detail limit 1;
 
-// 测试udf
+// 测试udf 
 
 select test_udf(person_id,account_info) from odps_ebank_detail limit 1;
