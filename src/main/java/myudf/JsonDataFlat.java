@@ -48,7 +48,7 @@ public class JsonDataFlat extends UDTF {
         if (jsonStr == null || jsonStr.length() < 1 || contentItems == null || contentItems.length() < 1) {
             return;
         }
-
+ 
         // 解析JSON值
         ReadContext ctx = JsonPath.parse(jsonStr);
 
