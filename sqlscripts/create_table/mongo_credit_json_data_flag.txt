@@ -1,0 +1,15 @@
+
+
+CREATE TABLE odps_ebank_detail_bill_record_flat (
+	main_id STRING,
+	card_no STRING,
+	trade_money STRING,
+	description STRING,
+	currency_type BIGINT,
+	trade_time STRING,
+	balance STRING
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
