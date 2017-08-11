@@ -1,3 +1,28 @@
+CREATE TABLE odps_ebank_detail_bill_info_flat (
+	main_id STRING,
+	bill_data STRING,
+	bill_month STRING,
+	payment_data STRING,
+	interest STRING,
+	credit_limit STRING,
+	cash_limit STRING,
+	last_balance STRING,
+	last_payment STRING,
+	new_balance STRING,
+	new_charges STRING,
+	min_payment STRING,
+	usd_credit_limit STRING,
+	usd_cash_limit STRING,
+	usd_interest STRING,
+	usd_last_balance STRING,
+	usd_last_payment STRING,
+	usd_new_balance STRING,
+	usd_min_payment STRING
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
 
 
 CREATE TABLE odps_ebank_detail_bill_record_flat (
@@ -8,6 +33,34 @@ CREATE TABLE odps_ebank_detail_bill_record_flat (
 	currency_type BIGINT,
 	trade_time STRING,
 	balance STRING
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+CREATE TABLE odps_ebank_detail_account_info_flat (
+	main_id STRING,
+	user_name STRING,
+	id_card STRING,
+	mobile STRING,
+	is_match_user_name STRING,
+	login_name STRING,
+)
+PARTITIONED BY (
+	pt STRING
+)
+LIFECYCLE 100000;
+
+
+
+CREATE TABLE odps_ebank_detail_account_info_card_list_flat (
+	main_id STRING,
+	card_no STRING,
+	full_card_no STRING,
+	card_type BIGINT,
+	salary_card STRING
 )
 PARTITIONED BY (
 	pt STRING

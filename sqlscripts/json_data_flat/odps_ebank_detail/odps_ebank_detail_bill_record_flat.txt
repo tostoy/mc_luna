@@ -1,6 +1,7 @@
 -- JSON数据扁平化(odps_ebank_detail.bill_record)
 INSERT OVERWRITE TABLE odps_ebank_detail_bill_record_flat PARTITION (pt)
-SELECT main_id, card_no, trade_money, description, currency_type, trade_time, balance, pt
+SELECT 
+main_id, card_no, trade_money, description, currency_type, trade_time, balance, pt
 FROM (
   SELECT
 	get_json_object(jsondata, '$.id') AS main_id,
@@ -20,7 +21,7 @@ FROM (
 	  ""
 	  ) AS (jsondata)
 	FROM (
-		SELECT *, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_ebank_detail WHERE pt="${bdp.system.bizdate}"
+		SELECT bill_record, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_ebank_detail WHERE pt="${bdp.system.bizdate}"
 	) a
   ) b
 )c WHERE pt IS NOT NULL;

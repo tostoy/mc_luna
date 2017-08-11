@@ -1,0 +1,39 @@
+-- JSON数据扁平化(odps_ebank_detail.bill_info)
+INSERT OVERWRITE TABLE odps_ebank_detail_bill_info_flat PARTITION (pt)
+SELECT 
+main_id, bill_data, bill_month, payment_data, interest, credit_limit, cash_limit, last_balance, last_payment, new_balance, new_charges, min_payment, usd_credit_limit, usd_cash_limit, usd_interest, usd_last_balance, usd_last_payment, usd_new_balance, usd_min_payment, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.bill_data') AS bill_data,
+	get_json_object(jsondata, '$.bill_month') AS bill_month,
+	get_json_object(jsondata, '$.payment_data') AS payment_data,
+	get_json_object(jsondata, '$.interest') AS interest,
+	get_json_object(jsondata, '$.credit_limit') AS credit_limit,
+	get_json_object(jsondata, '$.cash_limit') AS cash_limit,
+	get_json_object(jsondata, '$.last_balance') AS last_balance,
+	get_json_object(jsondata, '$.last_payment') AS last_payment,
+	get_json_object(jsondata, '$.new_balance') AS new_balance,
+	get_json_object(jsondata, '$.new_charges') AS new_charges,
+	get_json_object(jsondata, '$.min_payment') AS min_payment,
+	get_json_object(jsondata, '$.usd_credit_limit') AS usd_credit_limit,
+	get_json_object(jsondata, '$.usd_cash_limit') AS usd_cash_limit,
+	get_json_object(jsondata, '$.usd_interest') AS usd_interest,
+	get_json_object(jsondata, '$.usd_last_balance') AS usd_last_balance,
+	get_json_object(jsondata, '$.usd_last_payment') AS usd_last_payment,
+	get_json_object(jsondata, '$.usd_new_balance') AS usd_new_balance,
+	get_json_object(jsondata, '$.usd_min_payment') AS usd_min_payment,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  bill_info,
+	  "card_no:$..card_no[0]; bill_data:$..bill_data; bill_month:$..bill_month; payment_data:$..payment_data; interest:$..interest; credit_limit:$..credit_limit; cash_limit:$..cash_limit; last_balance:$..last_balance; last_payment:$..last_payment; new_balance:$..new_balance; new_charges:$..new_charges; min_payment:$..min_payment; usd_credit_limit:$..usd_credit_limit; usd_cash_limit:$..usd_cash_limit; usd_interest:$..usd_interest; usd_last_balance:$..usd_last_balance; usd_last_payment:$..usd_last_payment; usd_new_balance:$..usd_new_balance; usd_min_payment:$..usd_min_payment",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT bill_info, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_ebank_detail WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;

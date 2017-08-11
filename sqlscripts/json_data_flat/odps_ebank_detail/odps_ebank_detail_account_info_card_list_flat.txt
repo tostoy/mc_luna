@@ -1,0 +1,25 @@
+-- JSON数据扁平化(odps_ebank_detail.account_info_card_list)
+INSERT OVERWRITE TABLE odps_ebank_detail_account_info_card_list_flat PARTITION (pt)
+SELECT 
+main_id, card_no, full_card_no, card_type, salary_card, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.card_no') AS card_no,
+	get_json_object(jsondata, '$.full_card_no') AS full_card_no,
+	get_json_object(jsondata, '$.card_type') AS card_type,
+	get_json_object(jsondata, '$.salary_card') AS salary_card,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  account_info,
+	  "card_no:$.card_list[*].card_no; full_card_no:$.card_list[*].full_card_no; card_type:$.card_list[*].card_type; salary_card:$.card_list[*].salary_card",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT account_info, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_ebank_detail WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+) c WHERE pt IS NOT NULL;
