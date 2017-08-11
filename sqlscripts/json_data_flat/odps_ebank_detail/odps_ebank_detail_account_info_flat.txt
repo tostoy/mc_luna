@@ -1,0 +1,14 @@
+-- JSON数据扁平化(odps_ebank_detail.account_info)
+-- 此为单值非多列数据，所以直接使用get_json_object()抽取
+INSERT OVERWRITE TABLE odps_ebank_detail_account_info_flat PARTITION (pt)
+SELECT 
+	id AS main_id,
+	get_json_object(account_info, '$.user_name') AS user_name,
+	get_json_object(account_info, '$.id_card') AS id_card,
+	get_json_object(account_info, '$.mobile') AS mobile,
+	get_json_object(account_info, '$.is_match_user_name') AS is_match_user_name,
+	get_json_object(account_info, '$.login_name') AS login_name,
+	pt
+FROM 
+odps_ebank_detail 
+WHERE pt="${bdp.system.bizdate}"
