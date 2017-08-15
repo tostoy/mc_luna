@@ -3,7 +3,8 @@ CREATE TABLE odps_report_form_attribute LIKE odps_report_form_attribute_tmp;
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_report_form_attribute PARTITION (pt)
-SELECT id, statement_name, stats_date, fastest, slowest, avg, unusual, success_rate, created_at, updated_at, xdata, finished_at, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+id, statement_name, stats_date, fastest, slowest, avg, unusual, success_rate, created_at, updated_at, xdata, finished_at, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_report_form_attribute_tmp;
 
 -- 验证数据总数

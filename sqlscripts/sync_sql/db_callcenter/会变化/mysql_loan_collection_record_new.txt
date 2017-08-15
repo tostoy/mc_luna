@@ -3,7 +3,8 @@ CREATE TABLE odps_loan_collection_record_new LIKE odps_loan_collection_record_ne
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_loan_collection_record_new PARTITION (pt)
-SELECT id, order_id, operator, contact_id, contact_type, contact_name, relation, contact_phone, stress_level, order_level, order_state, operate_type, operate_source, operate_id, operate_at, content, created_at, updated_at, remark, promise_repayment_time, collection_result, next_follow_time, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+id, order_id, operator, contact_id, contact_type, contact_name, relation, contact_phone, stress_level, order_level, order_state, operate_type, operate_source, operate_id, operate_at, content, created_at, updated_at, remark, promise_repayment_time, collection_result, next_follow_time, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_loan_collection_record_new_tmp;
 
 -- 验证数据总数

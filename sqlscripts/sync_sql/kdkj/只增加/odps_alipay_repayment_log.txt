@@ -3,7 +3,8 @@ CREATE TABLE odps_alipay_repayment_log LIKE odps_alipay_repayment_log_tmp;
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_alipay_repayment_log PARTITION (pt)
-SELECT id, alipay_order_id, alipay_account, alipay_name, status, money, alipay_date, operator_user, remark, created_at, updated_at, type, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+id, alipay_order_id, alipay_account, alipay_name, status, money, alipay_date, operator_user, remark, created_at, updated_at, type, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_alipay_repayment_log_tmp;
 
 -- 验证数据总数

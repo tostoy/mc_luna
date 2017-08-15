@@ -3,7 +3,8 @@ CREATE TABLE odps_user_credit_money_log LIKE odps_user_credit_money_log_tmp;
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_user_credit_money_log PARTITION (pt)
-SELECT id, type, payment_type, status, user_id, order_id, order_uuid, operator_money, operator_name, pay_order_id, created_at, remark, img_url, updated_at, card_id, debit_channel, debit_account, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+id, type, payment_type, status, user_id, order_id, order_uuid, operator_money, operator_name, pay_order_id, created_at, remark, img_url, updated_at, card_id, debit_channel, debit_account, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_user_credit_money_log_tmp;
 
 -- 验证数据总数

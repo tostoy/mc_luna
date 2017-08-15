@@ -3,7 +3,8 @@ CREATE TABLE odps_report_form_response_tmp_log LIKE odps_report_form_response_tm
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_report_form_response_tmp_log PARTITION (pt)
-SELECT id, statement_name, stats_date, fastest, slowest, avg, unusual, success_rate, created_at, updated_at, xdata, finished_at, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+uuid, statement_name, user_name, type, response_start_time, response_end_time, created_at, updated_at, xdata, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_report_form_response_tmp_log_tmp;
 
 -- 验证数据总数

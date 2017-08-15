@@ -3,7 +3,8 @@ CREATE TABLE odps_user_order_loan_check_log LIKE odps_user_order_loan_check_log_
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_user_order_loan_check_log PARTITION (pt)
-SELECT id, order_id, user_id, repayment_id, before_status, after_status, operator_name, remark, type, operation_type, repayment_type, created_at, updated_at, head_code, back_code, reason_remark, can_loan_type, tree, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+id, order_id, user_id, repayment_id, before_status, after_status, operator_name, remark, type, operation_type, repayment_type, created_at, updated_at, head_code, back_code, reason_remark, can_loan_type, tree, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_user_order_loan_check_log_tmp;
 
 -- 验证数据总数
