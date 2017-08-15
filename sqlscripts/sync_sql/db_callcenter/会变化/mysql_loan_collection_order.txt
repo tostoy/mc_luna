@@ -3,7 +3,8 @@ CREATE TABLE odps_loan_collection_order LIKE odps_loan_collection_order_tmp;
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_loan_collection_order PARTITION (pt)
-SELECT id, client_id, user_id, user_loan_order_id, sync_plan_fee_time, sync_true_repayment_time, user_loan_order_repayment_id, dispatch_way, dispatch_name, dispatch_time, current_collection_admin_user_id, current_overdue_level, s1_approve_id, s2_approve_id, s3_approve_id, s4_approve_id, status, promise_repayment_time, last_collection_time, next_loan_advice, created_at, updated_at, operator_name, remark, outside_person, before_status, outside, renew_status, current_overdue_group, last_overdue_group, s5_approve_id, s6_approve_id, has_payed_money, collection_result, next_follow_time, tag, last_operate_id, last_operate_status, display_status, principal, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+id, client_id, user_id, user_loan_order_id, sync_plan_fee_time, sync_true_repayment_time, user_loan_order_repayment_id, dispatch_way, dispatch_name, dispatch_time, current_collection_admin_user_id, current_overdue_level, s1_approve_id, s2_approve_id, s3_approve_id, s4_approve_id, status, promise_repayment_time, last_collection_time, next_loan_advice, created_at, updated_at, operator_name, remark, outside_person, before_status, outside, renew_status, current_overdue_group, last_overdue_group, s5_approve_id, s6_approve_id, has_payed_money, collection_result, next_follow_time, tag, last_operate_id, last_operate_status, display_status, principal, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_loan_collection_order_tmp;
 
 -- 验证数据总数

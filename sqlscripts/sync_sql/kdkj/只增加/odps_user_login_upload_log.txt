@@ -3,7 +3,8 @@ CREATE TABLE odps_user_login_upload_log LIKE odps_user_login_upload_log_tmp;
 
 --- 将历史表中的数据根据数据的创建的时间插入目标表对应的分区中
 INSERT OVERWRITE TABLE odps_user_login_upload_log PARTITION (pt)
-SELECT id, user_id, longitude, latitude, address, time, clientType, osVersion, appVersion, deviceName, created_at, appMarket, deviceId, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
+SELECT 
+id, user_id, longitude, latitude, address, time, clientType, osVersion, appVersion, deviceName, created_at, appMarket, deviceId, TO_CHAR(FROM_UNIXTIME(created_at), 'yyyymmdd') AS pt 
 FROM odps_user_login_upload_log_tmp;
 
 -- 验证数据总数
