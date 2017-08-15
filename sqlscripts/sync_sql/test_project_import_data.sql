@@ -364,7 +364,7 @@ SELECT
 a.id, a.order_id, operator, contact_id, contact_type, contact_name, relation, contact_phone, stress_level, order_level, order_state, operate_type, operate_source, operate_id, operate_at, content, created_at, updated_at, remark, promise_repayment_time, collection_result, next_follow_time, pt 
 FROM rmdc_dw.odps_loan_collection_record_new a
 JOIN (
-	SELECT id FROM rmdc_dw_test1.odps_user_loan_order
+	SELECT id FROM rmdc_dw_test1.odps_loan_collection_order
 ) b
 ON a.order_id = b.id;
 
