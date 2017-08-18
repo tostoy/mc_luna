@@ -52,10 +52,8 @@ public class JsonDataFlat extends UDTF {
         */
 
         // 输入参数有效性判定
-        char firstChar = jsonStr.charAt(0);
-        char lastChar = jsonStr.charAt(jsonStr.length() - 1 );
         if (jsonStr == null || jsonStr.length() < 10 || contentItems == null || contentItems.length() < 1 ||
-           (firstChar != '{' && firstChar != '[') || (lastChar != ']' && lastChar != '}')) {
+           (jsonStr.charAt(0) != '{' && jsonStr.charAt(0) != '[') || (jsonStr.charAt(jsonStr.length() - 1 ) != ']' && jsonStr.charAt(jsonStr.length() - 1 ) != '}')) {
             return;
         }
 
