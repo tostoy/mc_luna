@@ -1,0 +1,5 @@
+--name:tb_loan_person
+--author:Administrator
+--create time:2017-08-16 13:38
+
+select * from odps_loan_person where pt='20170801'  limit 1;
