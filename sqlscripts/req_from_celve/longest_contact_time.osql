@@ -1,0 +1,41 @@
+--name:longest_contact_time
+--author:Administrator
+--create time:2017-08-18 17:19
+
+-- 查看运营商 用户最大通话时间
+select a.id, a.is_first, MaxCallUseTime(b.call_list) from odps_user_loan_order a  left join odps_telecom b on a.user_id = b.person_id  where a.pt >= 20170615 and a.pt<= 20170630 and a.is_first;
+
+select * from odps_telecom_call_list_flat limit 1;
+
+-- select * from (select a.person_id as uid, max(b.use_time) as max_use_time from odps_telecom a join odps_telecom_call_list_flat b on a.id = b.main_id) c limit 1;
+
+
+
+
+insert overwrite table zhifubao_user_temp1_result
+select user_id,max(count), max(case count when bigint(1) then overdue_day else 0 end) overdue1,max(case count when bigint(2) then overdue_day else 0 end) overdue2,
+       max(case count when bigint(3) then overdue_day else 0 end) overdue3,
+         max(case count when bigint(4) then overdue_day else 0 end) overdue4,
+max(case count when bigint(5) then overdue_day else 0 end) overdue5,
+max(case count when bigint(6) then overdue_day else 0 end) overdue6,
+max(case count when bigint(7) then overdue_day else 0 end) overdue7,
+max(case count when bigint(8) then overdue_day else 0 end) overdue8,
+max(case count when bigint(9) then overdue_day else 0 end) overdue9,
+max(case count when bigint(10) then overdue_day else 0 end) overdue10 from
+(
+select c.id as id, ab.user_id as user_id, ab.created_at as created_at, ab.count as  count , c.overdue_day as overdue_day from (select a.id as  id, a.user_id as user_id,a.created_at as created_at, row_number() over(partition by a.user_id order by a.created_at) as count from zhifubao_user_temp1 b left join odps_user_loan_order a on a.user_id = b.id) ab
+                                                                                                                              left join odps_user_loan_order_repayment c on c.order_id = ab.id
+ ) d group by  user_id;
+
+select * from odps_user_loan_order_repayment where order_id =1427721;
+
+
+select a.id as  id, a.user_id as user_id,a.created_at as created_at, row_number() over(partition by a.user_id order by a.created_at) as count from zhifubao_user_temp1 b left join odps_user_loan_order a on a.user_id = b.id;
+
+-- 去重
+
+insert overwrite table zhifubao_user_temp1
+select distinct(id),true from zhifubao_user_temp1;
+
+--
+select * from zhifubao_user_temp1 where id =4972285;
