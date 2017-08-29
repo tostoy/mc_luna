@@ -1,0 +1,25 @@
+-- JSON数据扁平化(odps_waimai_detail.x_data.order_list.items)
+INSERT OVERWRITE TABLE odps_waimai_detail_x_data_order_list_items_flat PARTITION (pt)
+SELECT 
+main_id, main_person_id, price, name, quantity, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.person_id') AS main_person_id,
+	get_json_object(jsondata, '$.price') AS price,
+	get_json_object(jsondata, '$.name') AS name,
+	get_json_object(jsondata, '$.quantity') AS quantity,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  x_data,
+	  "price:$.order_list.*.items.*.*.price; name:$.order_list.*.items.*.*.name; quantity:$.order_list.*.items.*.*.quantity",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT x_data, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id), ';', CONCAT("person_id:", person_id)) AS external_append_items FROM odps_waimai_detail WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;

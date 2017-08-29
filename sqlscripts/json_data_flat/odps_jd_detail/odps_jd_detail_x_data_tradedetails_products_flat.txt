@@ -1,0 +1,27 @@
+-- JSON数据扁平化(odps_jd_detail.x_data.tradedetails.products)
+INSERT OVERWRITE TABLE odps_jd_detail_x_data_tradedetails_products_flat PARTITION (pt)
+SELECT 
+main_id, name, mapping_id, trade_id, product_id, item_url, item_pic, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.name') AS name,
+	get_json_object(jsondata, '$.mapping_id') AS mapping_id,
+	get_json_object(jsondata, '$.trade_id') AS trade_id,
+	get_json_object(jsondata, '$.product_id') AS product_id,
+	get_json_object(jsondata, '$.item_url') AS item_url,
+	get_json_object(jsondata, '$.item_pic') AS item_pic,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  x_data,
+	  "name:$.tradedetails.tradedetails.*.products.*.name; mapping_id:$.tradedetails.tradedetails.*.products.*.mapping_id; trade_id:$.tradedetails.tradedetails.*.products.*.trade_id; product_id:$.tradedetails.tradedetails.*.products.*.product_id; item_url:$.tradedetails.tradedetails.*.products.*.item_url; item_pic:$.tradedetails.tradedetails.*.products.*.item_pic",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT x_data, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_jd_detail WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;

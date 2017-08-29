@@ -1,0 +1,35 @@
+-- JSON数据扁平化(odps_waimai_detail.x_data.order_list)
+INSERT OVERWRITE TABLE odps_waimai_detail_x_data_order_list_flat PARTITION (pt)
+SELECT 
+main_id, main_person_id, status, phone, packing_fee, platform_id, restaurant_tel, amount, order_end_time, restaurant_name, address, discount, date_id, pay_method, user_name, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.person_id') AS main_person_id,
+	get_json_object(jsondata, '$.status') AS status,
+	get_json_object(jsondata, '$.phone') AS phone,
+	get_json_object(jsondata, '$.packing_fee') AS packing_fee,
+	get_json_object(jsondata, '$.platform_id') AS platform_id,
+	get_json_object(jsondata, '$.restaurant_tel') AS restaurant_tel,
+	get_json_object(jsondata, '$.amount') AS amount,
+	get_json_object(jsondata, '$.order_end_time') AS order_end_time,
+	get_json_object(jsondata, '$.restaurant_name') AS restaurant_name,
+	get_json_object(jsondata, '$.address') AS address,
+	get_json_object(jsondata, '$.discount') AS discount,
+	get_json_object(jsondata, '$.date_id') AS date_id,
+	get_json_object(jsondata, '$.pay_method') AS pay_method,
+	get_json_object(jsondata, '$.user_name') AS user_name,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  x_data,
+	  "status:$.order_list.*.status; phone:$.order_list.*.phone; packing_fee:$.order_list.*.packing_fee; platform_id:$.order_list.*.platform_id; restaurant_tel:$.order_list.*.restaurant_tel; amount:$.order_list.*.amount; order_end_time:$.order_list.*.order_end_time; restaurant_name:$.order_list.*.restaurant_name; address:$.order_list.*.address; discount:$.order_list.*.discount; date_id:$.order_list.*.date_id; pay_method:$.order_list.*.pay_method; user_name:$.order_list.*.user_name",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT x_data, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id), ';', CONCAT("person_id:", person_id)) AS external_append_items FROM odps_waimai_detail WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;
