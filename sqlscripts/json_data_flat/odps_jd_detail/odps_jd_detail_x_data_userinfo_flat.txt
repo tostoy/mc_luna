@@ -1,0 +1,19 @@
+-- JSON数据扁平化(odps_jd_detail.x_data.userinfo)
+-- 此为单值非多列数据，所以直接使用get_json_object()抽取
+INSERT OVERWRITE TABLE odps_jd_detail_x_data_userinfo_flat PARTITION (pt)
+SELECT 
+	id AS main_id,
+	get_json_object(x_data, '$.userinfo.nick') AS nick,
+	get_json_object(x_data, '$.userinfo.email') AS email,
+	get_json_object(x_data, '$.userinfo.gender') AS gender,
+	get_json_object(x_data, '$.userinfo.mapping_id') AS mapping_id,
+	get_json_object(x_data, '$.userinfo.user_name') AS user_name,
+	get_json_object(x_data, '$.userinfo.login_name') AS login_name,
+	get_json_object(x_data, '$.userinfo.real_name') AS real_name,
+	get_json_object(x_data, '$.userinfo.vip_count') AS vip_count,
+	get_json_object(x_data, '$.userinfo.register_date') AS register_date,
+	get_json_object(x_data, '$.userinfo.vip_level') AS vip_level,
+	pt
+FROM 
+odps_jd_detail 
+WHERE pt="${bdp.system.bizdate}"

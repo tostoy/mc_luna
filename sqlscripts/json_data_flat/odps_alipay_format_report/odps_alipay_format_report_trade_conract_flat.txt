@@ -1,0 +1,24 @@
+-- JSON数据扁平化(odps_alipay_format_report.trade_conract)
+INSERT OVERWRITE TABLE odps_alipay_format_report_trade_conract_flat PARTITION (pt)
+SELECT 
+main_id, main_person_id, name, account, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.main_person_id') AS main_person_id,
+	get_json_object(jsondata, '$.name') AS name,
+	get_json_object(jsondata, '$.account') AS account,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  trade_conract,
+	  "name:$.*.name; account:$.*.account",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT trade_conract, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id), ';', CONCAT("person_id:", person_id)) AS external_append_items FROM odps_alipay_format_report WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;

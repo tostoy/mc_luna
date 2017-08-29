@@ -16,7 +16,7 @@ FROM (
 	SELECT
 	  json_data_flat(
 	  bill_record,
-	  "card_no:$..card_no; trade_money:$..trade_money; description:$..description; currency_type:$..currency_type; trade_time:$..trade_time; balance:$..balance",
+	  "card_no:$.*.*.*.card_no[0]; trade_money:$.*.*.*.trade_money; description:$.*.*.*.description; currency_type:$.*.*.*.currency_type; trade_time:$.*.*.*.trade_time; balance:$.*.*.*.balance",
 	  external_append_items,
 	  ""
 	  ) AS (jsondata)

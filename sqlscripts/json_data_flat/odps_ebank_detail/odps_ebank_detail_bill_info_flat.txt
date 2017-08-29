@@ -28,7 +28,7 @@ FROM (
 	SELECT
 	  json_data_flat(
 	  bill_info,
-	  "card_no:$..card_no[0]; bill_data:$..bill_data; bill_month:$..bill_month; payment_data:$..payment_data; interest:$..interest; credit_limit:$..credit_limit; cash_limit:$..cash_limit; last_balance:$..last_balance; last_payment:$..last_payment; new_balance:$..new_balance; new_charges:$..new_charges; min_payment:$..min_payment; usd_credit_limit:$..usd_credit_limit; usd_cash_limit:$..usd_cash_limit; usd_interest:$..usd_interest; usd_last_balance:$..usd_last_balance; usd_last_payment:$..usd_last_payment; usd_new_balance:$..usd_new_balance; usd_min_payment:$..usd_min_payment",
+	  "card_no:$.*.*.card_no; bill_data:$.*.*.bill_data; bill_month:$.*.*.bill_month; payment_data:$.*.*.payment_data; interest:$.*.*.interest; credit_limit:$.*.*.credit_limit; cash_limit:$.*.*.cash_limit; last_balance:$.*.*.last_balance; last_payment:$.*.*.last_payment; new_balance:$.*.*.new_balance; new_charges:$.*.*.new_charges; min_payment:$.*.*.min_payment; usd_credit_limit:$.*.*.usd_credit_limit; usd_cash_limit:$.*.*.usd_cash_limit; usd_interest:$.*.*.usd_interest; usd_last_balance:$.*.*.usd_last_balance; usd_last_payment:$.*.*.usd_last_payment; usd_new_balance:$.*.*.usd_new_balance; usd_min_payment:$.*.*.usd_min_payment",
 	  external_append_items,
 	  ""
 	  ) AS (jsondata)

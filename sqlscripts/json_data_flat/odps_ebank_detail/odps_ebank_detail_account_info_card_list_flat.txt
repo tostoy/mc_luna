@@ -14,7 +14,7 @@ FROM (
 	SELECT
 	  json_data_flat(
 	  account_info,
-	  "card_no:$.card_list[*].card_no; full_card_no:$.card_list[*].full_card_no; card_type:$.card_list[*].card_type; salary_card:$.card_list[*].salary_card",
+	  "card_no:$.*.*.card_no; full_card_no:$.*.*.full_card_no; card_type:$.*.*.card_type; salary_card:$.*.*.salary_card",
 	  external_append_items,
 	  ""
 	  ) AS (jsondata)

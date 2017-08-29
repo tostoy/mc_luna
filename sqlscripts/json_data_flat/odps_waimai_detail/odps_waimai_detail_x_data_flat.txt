@@ -1,0 +1,13 @@
+-- JSON数据扁平化(odps_waimai_detail.x_data)
+-- 此为单值非多列数据，所以直接使用get_json_object()抽取
+INSERT OVERWRITE TABLE odps_waimai_detail_x_data_flat PARTITION (pt)
+SELECT 
+	id AS main_id,
+	person_id AS main_person_id,
+	get_json_object(x_data, '$.total_size') AS total_size,
+	get_json_object(x_data, '$.account_balance') AS account_balance,
+	get_json_object(x_data, '$.task_id') AS task_id,
+	pt
+FROM 
+odps_waimai_detail 
+WHERE pt="${bdp.system.bizdate}";

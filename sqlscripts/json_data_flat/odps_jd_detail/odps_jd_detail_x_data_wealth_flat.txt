@@ -1,0 +1,24 @@
+-- JSON数据扁平化(odps_jd_detail.x_data.wealth)
+-- 此为单值非多列数据，所以直接使用get_json_object()抽取
+INSERT OVERWRITE TABLE odps_jd_detail_x_data_wealth_flat PARTITION (pt)
+SELECT 
+	id AS main_id,
+	get_json_object(x_data, '$.wealth.id') AS main_id,
+	get_json_object(x_data, '$.wealth.balance') AS balance,
+	get_json_object(x_data, '$.wealth.fund') AS fund,
+	get_json_object(x_data, '$.wealth.mapping_id') AS mapping_id,
+	get_json_object(x_data, '$.wealth.total_money') AS total_money,
+	get_json_object(x_data, '$.wealth.wallet_money') AS wallet_money,
+	get_json_object(x_data, '$.wealth.available_limit') AS available_limit,
+	get_json_object(x_data, '$.wealth.credit_limit') AS credit_limit,
+	get_json_object(x_data, '$.wealth.credit_waitpay') AS credit_waitpay,
+	get_json_object(x_data, '$.wealth.delinquency_balance') AS delinquency_balance,
+	get_json_object(x_data, '$.wealth.touravailable_limit') AS touravailable_limit,
+	get_json_object(x_data, '$.wealth.tourcredit_limit') AS tourcredit_limit,
+	get_json_object(x_data, '$.wealth.tourcredit_waitpay') AS tourcredit_waitpay,
+	get_json_object(x_data, '$.wealth.tourdelinquency_balance') AS tourdelinquency_balance,
+	get_json_object(x_data, '$.wealth.netbussiness_loan') AS netbussiness_loan,
+	pt
+FROM 
+odps_jd_detail 
+WHERE pt="${bdp.system.bizdate}"

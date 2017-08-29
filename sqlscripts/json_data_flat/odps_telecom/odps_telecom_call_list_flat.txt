@@ -1,0 +1,30 @@
+-- JSON数据扁平化(odps_telecom.call_list)
+INSERT OVERWRITE TABLE odps_telecom_call_list_flat PARTITION (pt)
+SELECT 
+main_id, start_time, update_time, use_time, subtotal, place, init_type, call_type, other_cell_phone, cell_phone, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.start_time') AS start_time,
+	get_json_object(jsondata, '$.update_time') AS update_time,
+	get_json_object(jsondata, '$.use_time') AS use_time,
+	get_json_object(jsondata, '$.subtotal') AS subtotal,
+	get_json_object(jsondata, '$.place') AS place,
+	get_json_object(jsondata, '$.init_type') AS init_type,
+	get_json_object(jsondata, '$.call_type') AS call_type,
+	get_json_object(jsondata, '$.other_cell_phone') AS other_cell_phone,
+	get_json_object(jsondata, '$.cell_phone') AS cell_phone,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  call_list,
+	  "start_time:$.*.start_time; update_time:$.*.update_time; use_time:$.*.use_time; subtotal:$.*.subtotal; place:$.*.place; init_type:$.*.init_type; call_type:$.*.call_type; other_cell_phone:$.*.other_cell_phone; cell_phone:$.*.cell_phone",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT call_list, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_telecom WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;

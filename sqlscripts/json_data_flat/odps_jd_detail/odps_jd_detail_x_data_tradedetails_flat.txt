@@ -1,0 +1,30 @@
+-- JSON数据扁平化(odps_jd_detail.x_data.tradedetails)
+INSERT OVERWRITE TABLE odps_jd_detail_x_data_tradedetails_flat PARTITION (pt)
+SELECT 
+main_id, province, city, mapping_id, trade_time, trade_id, receiver, receive_address, receive_phone, amount, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.province') AS province,
+	get_json_object(jsondata, '$.city') AS city,
+	get_json_object(jsondata, '$.mapping_id') AS mapping_id,
+	get_json_object(jsondata, '$.trade_time') AS trade_time,
+	get_json_object(jsondata, '$.trade_id') AS trade_id,
+	get_json_object(jsondata, '$.receiver') AS receiver,
+	get_json_object(jsondata, '$.receive_address') AS receive_address,
+	get_json_object(jsondata, '$.receive_phone') AS receive_phone,
+	get_json_object(jsondata, '$.amount') AS amount,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  x_data,
+	  "province:$.tradedetails.tradedetails.*.province; city:$.tradedetails.tradedetails.*.city; mapping_id:$.tradedetails.tradedetails.*.mapping_id; trade_time:$.tradedetails.tradedetails.*.trade_time; trade_id:$.tradedetails.tradedetails.*.trade_id; receiver:$.tradedetails.tradedetails.*.receiver; receive_address:$.tradedetails.tradedetails.*.receive_address; receive_phone:$.tradedetails.tradedetails.*.receive_phone; amount:$.tradedetails.tradedetails.*.amount",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT x_data, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_jd_detail WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;
