@@ -1,0 +1,145 @@
+-- 创建目标表
+CREATE TABLE odps_ebank_detail_havept LIKE odps_ebank_detail;
+
+INSERT OVERWRITE TABLE odps_ebank_detail_havept PARTITION (pt)
+SELECT 
+id, open_id, person_id, bill_info, bill_record, bank_name, account_info, id_card, update_time, type, create_time, case when create_time = 'null' then '20170726' else TO_CHAR(create_time, 'yyyymmdd') end AS pt 
+FROM odps_ebank_detail;
+
+-- 创建目标表
+CREATE TABLE odps_telecom_havept LIKE odps_telecom;
+
+INSERT OVERWRITE TABLE odps_telecom_havept PARTITION (pt)
+SELECT 
+id, create_time, collect_token, person_id, telecom_type, real_name, mobile, id_card, reg_time, transactions, call_list, net_list, smse_list, type, update_time, TO_CHAR(create_time, 'yyyymmdd') AS pt 
+FROM odps_telecom;
+
+
+-- 创建目标表
+CREATE TABLE odps_alipay_format_report LIKE odps_alipay_format_report_with_person_id;
+
+INSERT OVERWRITE TABLE odps_alipay_format_report PARTITION (pt)
+SELECT 
+id, ants_lines, created_time, wealth, register_time, balance, balance_bao, fortune_bao, fund, deposit_bao, bank_cards, phone, email, taobao_name, friends_contact, trade_conract, deal_record, real_name_status, real_name, taobao_financial, person_id,
+	CASE 
+	WHEN pt = 'history' THEN '20170329'
+	ELSE
+	TO_CHAR(created_time, 'yyyymmdd') 
+	END
+	AS pt
+FROM odps_alipay_format_report_with_person_id;
+
+
+
+-- 创建目标表
+CREATE TABLE odps_rule_report_havept LIKE odps_rule_report;
+
+INSERT OVERWRITE TABLE odps_rule_report_havept PARTITION (pt)
+SELECT 
+id, created_at, basic_report, score_report, updated_at, 
+	CASE
+	WHEN created_at is null THEN 'hisotry'
+	WHEN trim(created_at) = ""  THEN 'hisotry'
+	WHEN created_at = 'null' THEN 'hisotry'
+	WHEN created_at = 'NULL' THEN 'hisotry'
+	WHEN created_at is null THEN 'hisotry'
+	ELSE
+	TO_CHAR(from_unixtime(created_at), 'yyyymmdd')
+	END AS pt 
+FROM odps_rule_report;
+
+
+
+-- 创建目标表
+CREATE TABLE odps_taobao_format_data_havept LIKE odps_taobao_format_data;
+
+INSERT OVERWRITE TABLE odps_taobao_format_data_havept PARTITION (pt)
+SELECT 
+id, open_id, person_id, provider_type, created_time, taobaoname, loginemail, bindingmobile, accounttype, realname, growth, creditpoint, taobaoaddress, alipayemail, alipaymobile, goodrate, middlerate, badrate, tianmaopoint, tianmaolevel, tianmaocreditlevel, tianmaoexperience, dealrecord, exception, 
+CASE
+	WHEN created_time is null THEN 'history'
+	WHEN trim(created_time) = ""  THEN 'history'
+	WHEN tolower(created_time) = 'null' THEN 'history'
+	WHEN created_time is null THEN 'history'
+ELSE
+	TO_CHAR(created_time, 'yyyymmdd')
+END AS pt 
+FROM odps_taobao_format_data;
+
+
+
+-- 创建目标表
+CREATE TABLE odps_user_installed_apps_havept LIKE odps_user_installed_apps_tmp;
+ALTER TABLE odps_user_installed_apps_tmp RENAME TO odps_user_installed_apps_nopt;
+
+INSERT OVERWRITE TABLE odps_user_installed_apps_havept PARTITION (pt)
+SELECT 
+id, created_at, user_id, deviceid, package_name, app_name, version_code, clienttype, osversion, appversion, devicename, appmarket, TO_CHAR(created_at, 'yyyymmdd') AS pt
+FROM odps_user_installed_apps_nopt;
+
+
+
+
+
+-- 创建目标表
+CREATE TABLE odps_user_mobile_contacts_havept LIKE odps_user_mobile_contacts;
+
+INSERT OVERWRITE TABLE odps_user_mobile_contacts_havept PARTITION (pt)
+SELECT 
+id, created_at, user_id, mobile, name, updated_at, person_id, TO_CHAR(created_at, 'yyyymmdd') AS pt
+FROM odps_user_mobile_contacts;
+
+
+
+
+
+-- 创建目标表
+CREATE TABLE odps_user_phone_message_havept LIKE odps_user_phone_message;
+
+INSERT OVERWRITE TABLE odps_user_phone_message_havept PARTITION (pt)
+SELECT 
+id, created_at, user_id, deviceid, message_content, message_date, phone, clienttype, osversion, appversion, devicename, appmarket, TO_CHAR(created_at, 'yyyymmdd') AS pt
+FROM odps_user_phone_message;
+
+
+
+
+
+
+
+
+
+
+############################################################################################################################
+--- 多重转换
+
+-- 创建目标表
+CREATE TABLE odps_taobao_format_data_goodpt LIKE odps_taobao_format_data;
+
+INSERT OVERWRITE TABLE odps_taobao_format_data_goodpt PARTITION (pt)
+SELECT 
+id, open_id, person_id, provider_type, case when trim(created_time) = '' THEN to_char(from_unixtime(conv(substr(id, 1, 8), 16, 10)), 'YYYY-MM-DD HH:MI:SS') ELSE created_time END AS created_time, taobaoname, loginemail, bindingmobile, accounttype, realname, growth, creditpoint, taobaoaddress, alipayemail, alipaymobile, goodrate, middlerate, badrate, tianmaopoint, tianmaolevel, tianmaocreditlevel, tianmaoexperience, dealrecord, exception, 
+CASE
+	WHEN trim(pt) = 'history' THEN to_char(from_unixtime(conv(substr(id, 1, 8), 16, 10)), 'YYYYMMDD')
+ELSE
+	pt
+END 
+AS pt 
+FROM odps_taobao_format_data;
+
+
+
+
+-- 创建目标表
+CREATE TABLE odps_rule_report_goodpt LIKE odps_rule_report;
+
+INSERT OVERWRITE TABLE odps_rule_report_goodpt PARTITION (pt)
+SELECT 
+id, created_at, basic_report, score_report, updated_at, 
+CASE 
+WHEN (created_at = 'null' AND updated_at = 'null') THEN 'history',
+WHEN created_at = 'null' THEN TO_CHAR(from_unixtime(updated_at), 'yyyymmdd')
+ELSE
+TO_CHAR(from_unixtime(created_at), 'yyyymmdd')
+END AS pt 
+FROM odps_rule_report;

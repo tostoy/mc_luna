@@ -1,0 +1,28 @@
+-- JSON数据扁平化(odps_telecom.smse_list)
+INSERT OVERWRITE TABLE odps_telecom_smse_list_flat PARTITION (pt)
+SELECT 
+main_id, update_time, place, other_cell_phone, subtotal, start_time, cell_phone, init_type, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.update_time') AS update_time,
+	get_json_object(jsondata, '$.place') AS place,
+	get_json_object(jsondata, '$.other_cell_phone') AS other_cell_phone,
+	get_json_object(jsondata, '$.subtotal') AS subtotal,
+	get_json_object(jsondata, '$.start_time') AS start_time,
+	get_json_object(jsondata, '$.cell_phone') AS cell_phone,
+	get_json_object(jsondata, '$.init_type') AS init_type,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  smse_list,
+	  "update_time:$.*.update_time; place:$.*.place; other_cell_phone:$.*.other_cell_phone; subtotal:$.*.subtotal; start_time:$.*.start_time; cell_phone:$.*.cell_phone; init_type:$.*.init_type",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT smse_list, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_telecom WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;

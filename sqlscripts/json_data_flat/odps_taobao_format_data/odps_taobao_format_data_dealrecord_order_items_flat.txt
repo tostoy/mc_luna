@@ -1,0 +1,30 @@
+-- JSON数据扁平化(odps_taobao_format_data.dealrecord.order_items)
+INSERT OVERWRITE TABLE odps_taobao_format_data_dealrecord_order_items_flat PARTITION (pt)
+SELECT 
+main_id, quantity, mapping_id, trade_id, item_id, item_url, item_pic, item_name, original, real_total, pt
+FROM (
+  SELECT
+	get_json_object(jsondata, '$.id') AS main_id,
+	get_json_object(jsondata, '$.quantity') AS quantity,
+	get_json_object(jsondata, '$.mapping_id') AS mapping_id,
+	get_json_object(jsondata, '$.trade_id') AS trade_id,
+	get_json_object(jsondata, '$.item_id') AS item_id,
+	get_json_object(jsondata, '$.item_url') AS item_url,
+	get_json_object(jsondata, '$.item_pic') AS item_pic,
+	get_json_object(jsondata, '$.item_name') AS item_name,
+	get_json_object(jsondata, '$.original') AS original,
+	get_json_object(jsondata, '$.real_total') AS real_total,
+	get_json_object(jsondata, '$.pt') AS pt
+  FROM (
+	SELECT
+	  json_data_flat(
+	  dealrecord,
+	  "quantity:$.*.order_items.*.quantity; mapping_id:$.*.order_items.*.mapping_id; trade_id:$.*.order_items.*.trade_id; item_id:$.*.order_items.*.item_id; item_url:$.*.order_items.*.item_url; item_pic:$.*.order_items.*.item_pic; item_name:$.*.order_items.*.item_name; original:$.*.order_items.*.original; real_total:$.*.order_items.*.real_total",
+	  external_append_items,
+	  ""
+	  ) AS (jsondata)
+	FROM (
+		SELECT dealrecord, CONCAT(CONCAT('pt:', pt), ';', CONCAT("id:", id)) AS external_append_items FROM odps_taobao_format_data WHERE pt="${bdp.system.bizdate}"
+	) a
+  ) b
+)c WHERE pt IS NOT NULL;
