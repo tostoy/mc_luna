@@ -1,0 +1,212 @@
+--name:order_conform
+--author:Administrator
+--create time:2017-08-22 15:22
+
+-- 一对多情况
+
+
+-- 扩展特征
+-- 订单序号
+-- 成功订单序号
+-- 上次订单号
+-- 上次订单申请间隔天数
+-- 上次订单卡类型
+-- 上次成功订单号
+-- 上次成功订单申请间隔天数
+-- 上次成功订单还款间隔天数
+-- 上次成功订单卡类型
+-- 申请次数
+-- 借款次数
+-- 还款次数
+-- 正常还款次数
+-- overdue_day
+-- 提前还款天数
+
+select a.id,
+       a.row_num as list_no,
+       a.row_num2 as success_no,
+       c.id as last_order_id,
+       (a.created_at -pre_order.created_at)/86400   as last_order_apply_interval,
+        pre_order.card_type as last_order_cardtype,
+       b.id as last_sucess_order_id,
+       (a.created_at   -pre_success_order.created_at)/86400  as last_success_order_apply_interval,
+       (a.created_at   -pre_success_order_repayment.true_repayment_time)/86400  as last_success_order_apply_interval,
+        pre_success_order.card_type as last_success_order_cardtype,
+        d.row_num1 as apply_times,
+         d.row_num2 as order_times,
+         d.row_num3 as repay_times,
+         d.row_num4 as normal_repay_times,
+         repay.overdue_day as overdue_day,
+         repay.true_repayment_time- repay.plan_repayment_time as repay_in_advance
+       from order_5 a
+left join order_5 b on a.user_id = b.user_id and a.row_num2 =  b.row_num2 + 1
+left join order_5 c on a.user_id = c.user_id and a.row_num1 =  c.row_num1 +1
+left join odps_user_loan_order pre_order on pre_order.id = c.id
+left join odps_user_loan_order pre_success_order on pre_success_order.id = b.id
+left join odps_user_loan_order_repayment pre_success_order_repayment  on pre_success_order.id = pre_success_order_repayment.order_id
+left join order_6 d on a.id = d.id
+left join odps_user_loan_order_repayment repay on a.id =  repay.order_id;
+
+
+-- 填充null 作为借款次数特征
+
+CREATE TABLE order_6 (
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num1 BIGINT COMMENT '行列1',
+row_num2 BIGINT COMMENT '行列2',
+row_num3 BIGINT COMMENT '行列3',
+row_num4 BIGINT COMMENT '行列4',
+row_num BIGINT COMMENT '行列'
+);
+insert overwrite table order_6
+select a.id, a.user_id, a.created_at, a.card_type, a.status,
+       b.row_num1,
+       b.row_num2,
+       b.row_num3,
+       b.row_num4,
+       a.row_num
+from order_5 a join(
+                   select a.id as id, max(b.row_num2) as row_num1,max(b.row_num2) as row_num2,max(b.row_num3) as row_num3,max(b.row_num4) as row_num4 from order_5 a left join  order_5 b on a.user_id =b.user_id where a.id >= b.id group by a.id
+                   ) b on a.id = b.id;
+
+select *, row_number() over(partition  by user_id order by created_at) from order_6;
+
+-- 生成中间表00
+CREATE TABLE order_5 (
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num1 BIGINT COMMENT '行列1',
+row_num2 BIGINT COMMENT '行列2',
+row_num3 BIGINT COMMENT '行列3',
+row_num4 BIGINT COMMENT '行列4',
+row_num BIGINT COMMENT '行列'
+);
+insert overwrite table order_5
+select a.id, a.user_id, a.created_at, a.card_type, a.status,
+       COALESCE(order_1.row_num,0),
+       COALESCE(order_2.row_num,0),
+       COALESCE(order_3.row_num,0),
+       COALESCE(order_4.row_num,0),row_number() over(partition by a.user_id order by a.created_at) as order_rn
+from odps_user_loan_order a left join order_1 on a.id =order_1.id left join order_2 on a.id =order_2.id
+     left join order_3 on a.id =order_3.id left join order_4 on a.id =order_4.id;
+
+
+
+
+-- 申请次数列表
+CREATE TABLE order_1 (
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num BIGINT COMMENT '行列'
+);
+insert overwrite table order_1
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn
+from odps_user_loan_order a;
+
+-- 借款次数列表
+CREATE TABLE order_2 (
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num BIGINT COMMENT '行列',
+true_repayment_time BIGINT COMMENT '真实还款时间',
+overdue_day BIGINT COMMENT '逾期'
+);
+insert overwrite table order_2
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
+b.true_repayment_time,b.overdue_day
+from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id;
+
+-- 还款订单序列表 （有还款记录且还款记录状态为4）
+CREATE TABLE order_3(
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num BIGINT COMMENT '行列',
+true_repayment_time BIGINT COMMENT '真实还款时间',
+overdue_day BIGINT COMMENT '逾期'
+);
+insert overwrite table order_3
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
+b.true_repayment_time, b.overdue_day
+from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id where b.status = 4;
+
+
+-- 正常还款订单记录表
+CREATE TABLE order_4(
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num BIGINT COMMENT '行列',
+true_repayment_time BIGINT COMMENT '真实还款时间',
+overdue_day BIGINT COMMENT '逾期'
+);
+insert overwrite table order_4
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
+        b.true_repayment_time, b.overdue_day
+from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id where  b.status = 4 and b.true_repayment_time - a.created_at >= 4*86400 and b.overdue_day<=3 ;
+
+
+-- 准备
+
+
+
+
+select
+ --  基础特征
+       tb_order.user_id, tb_order.id as order_id, tb_order.order_type, tb_order.money_amount,tb_order.loan_method, tb_order.loan_term,
+       tb_order.created_at  as order_created_at, tb_order.status as order_status,
+       tb_order.order_time,tb_order.trail_time,tb_order.current_interests,tb_order.late_fee_apr,tb_order.card_id, tb_order.counter_fee,
+       tb_order.is_first, tb_order.auto_risk_check_status, tb_order.is_hit_risk_rule,tb_order.sub_order_type,tb_order.is_user_confirm, tb_order.from_app, tb_order.coupon_id,tree,tb_order.card_type,
+       tb_order.post_interest,
+  -- repayment 表特征
+       tb_repayment.interests, tb_repayment.late_day, tb_repayment.late_fee,tb_repayment.plan_repayment_time,
+         tb_repayment.status as repayment_status, tb_repayment.total_money as repayment_total_money, tb_repayment.true_repayment_time,
+         tb_repayment.loan_time,tb_repayment.loan_day, tb_repayment.apply_repayment_time,tb_repayment.interest_time, tb_repayment.true_total_money,
+       tb_repayment.debit_times, tb_repayment.current_debit_money, tb_repayment.overdue_day,
+-- 机审结果
+
+-- delay_log
+
+-- checklog 可能一对多
+    tb_checklog.operation_type, tb_checklog.operator_name, tb_checklog.after_status,
+    tb_checklog.created_at as order_checked_date, tb_checklog.reason_remark,
+    tb_checklog.head_code, tb_checklog.back_code,
+-- 订单属性表
+   tb_attribute.rank_data as order_rank_data
+-- 扩展属性表
+--    order_reloan_interval_time_pre， 订单复借间隔时间（下单时与上一单成功借款间隔时间）
+--    order_reloan_pre_card_type， 上一单成功借款卡类型
+--    order_reloan_interval_time_next， 订单复借间隔时间（订单与下一单成功借款间隔时间）
+--    order_reloan_pre_next_type， 下一单成功借款卡类型
+--    order_repay_interval_time_pre， 订单复借间隔时间（下单时与上一单成功借款间隔时间）
+--    order_reloan_interval_time_pre， 订单复借间隔时间（下单时与上一单成功借款间隔时间）
+--    order_reloan_interval_time_pre， 订单复借间隔时间（下单时与上一单成功借款间隔时间）
+--    order_reloan_interval_time_pre， 订单复借间隔时间（下单时与上一单成功借款间隔时间）
+
+
+
+
+
+
+from odps_user_loan_order tb_order
+     left join odps_user_loan_order_repayment tb_repayment on tb_order.id = tb_repayment.order_id
+     left join odps_user_order_loan_check_log tb_checklog on tb_order.id = tb_checklog.order_id
+     left join odps_user_loan_order_attribute  tb_attribute on tb_attribute.order_id = tb_order.id
+where tb_order.pt= 20170801 limit 1;

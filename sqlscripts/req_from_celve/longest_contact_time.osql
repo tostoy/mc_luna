@@ -3,7 +3,17 @@
 --create time:2017-08-18 17:19
 
 -- 查看运营商 用户最大通话时间
-select a.id, a.is_first, MaxCallUseTime(b.call_list) from odps_user_loan_order a  left join odps_telecom b on a.user_id = b.person_id  where a.pt >= 20170615 and a.pt<= 20170630 and a.is_first;
+
+insert overwrite table rmdc_dw_test1.temp_max_use_time11
+select a.id,a.user_id,a.is_first,row_number() over(partition by a.user_id order by b.created_time desc) as row_num,
+       json_parse(json_parse(b.x_data,"$..call_len"),"$.max()"),c.overdue_day
+from odps_user_loan_order a
+     left join odps_loan_person per on a.user_id = per.id
+     left join odps_credit_person d  on d.id_card = per.id_number and per.phone = d.mobile
+     left join odps_credit_jxl_data b  on d.id = b.credit_person_id
+     left join odps_user_loan_order_repayment c on a.id=c.order_id  where a.pt >= 20170615 and a.pt<= 20170630 and a.is_first =1;
+
+
 
 select * from odps_telecom_call_list_flat limit 1;
 
@@ -11,7 +21,7 @@ select * from odps_telecom_call_list_flat limit 1;
 
 
 
-
+-- 生成用户各个订单逾期信息表
 insert overwrite table zhifubao_user_temp1_result
 select user_id,max(count), max(case count when bigint(1) then overdue_day else 0 end) overdue1,max(case count when bigint(2) then overdue_day else 0 end) overdue2,
        max(case count when bigint(3) then overdue_day else 0 end) overdue3,
@@ -39,3 +49,14 @@ select distinct(id),true from zhifubao_user_temp1;
 
 --
 select * from zhifubao_user_temp1 where id =4972285;
+
+
+-- 创建表
+ CREATE TABLE rmdc_dw_test1.temp_max_use_time11 (
+ id BIGINT COMMENT '订单id',
+ user_id BIGINT COMMENT 'user id',
+ is_new BIGINT COMMENT '是否新老用户',
+ row_num BIGINT COMMENT '行列',
+ max_use_time BIGINT COMMENT '最长使用时间',
+ overdue_day BIGINT COMMENT '逾期时间'
+ );

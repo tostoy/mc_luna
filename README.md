@@ -63,7 +63,12 @@ gradle install  com.jayway.JsonPath lib
 
 mvn clean package mc_luna.jar
 
+
 add jar d:/mc_luna.jar -f
+
+// 添加文件
+add file <local_file> [as alias] [comment 'cmt'][-f];
+
 
 CREATE FUNCTION test_udtf AS 'myudf.UDTFHello' USING 'mc_luna.jar';
 
@@ -84,3 +89,16 @@ select test_udf(person_id,account_info) from odps_ebank_detail limit 1;
 1. 因为Maxcompute开发的udf或mr时在maxcompute上运行存在沙箱限制，不允许特定包进行调用。
 所以在开发过程中，如果使用了第三方Jar包来完成部分功能时，需要手动将调用限制那块的代码去除掉，然后重新打成jar包。
 目前我们使用`/manual_compile_jar`目录为存放重新编译的jar包，如果你使用maven打包程序需要该包替换到maven目录下自动下载的包。
+
+
+## 七、 UDF列表
+
+### 1. 身份证相关函数
+| 函数| 说明|
+|:--|:--|
+|id_card_province(string) -> string |由身份证号获取省份|
+|id_card_city(string) -> string |由身份证号获取城市|
+|id_card_area(string) -> string |由身份证号获取区或县|
+|id_card_birthday(string) -> string |由身份证号获取出生日期|
+|id_card_gender(string) -> string |由身份证号获取性别|
+|is_valid_id_card(string) -> boolean |鉴别是否是有效的身份证号|
