@@ -1,0 +1,39 @@
+--name:verification
+--author:Administrator
+--create time:2017-09-04 18:04
+CREATE TABLE `tb_tmp_check_data_for_h` (
+  `order_id` BIGINT ,
+  `user_id` BIGINT ,
+  `overdue_day` BIGINT  COMMENT '逾期天数',
+  `prepayment_day` BIGINT COMMENT '提前还款天数',
+  `apply_times` BIGINT  COMMENT '申请次数',
+  `loan_times` BIGINT  COMMENT '借款次数',
+  `successful_order_number` BIGINT  COMMENT '成功订单序号',
+  `order_number` BIGINT  COMMENT '订单序号',
+  `return_times` BIGINT  COMMENT '还款次数',
+  `normal_return_times` BIGINT  COMMENT '正常还款次数',
+  `last_order_diff_day` BIGINT  COMMENT '上次订单申请间隔天数',
+  `last_order_id` BIGINT  COMMENT '上次订单号',
+  `last_order_card_type` BIGINT  COMMENT '上次订单卡类型',
+  `last_successful_order_id` BIGINT COMMENT '上次成功订单号',
+  `last_successful_order_card_type` BIGINT  COMMENT '上次成功订单卡类型',
+  `last_successful_order_apply_diff_day` BIGINT  COMMENT '上次成功订单申请间隔天数',
+  `last_successful_order_repay_diff_day` BIGINT  COMMENT '上次成功订单还款间隔天数'
+);
+
+
+select b.id, a.user_id,  b.list_no-a.order_number,
+    b.success_no  -a.successful_order_number,
+	COALESCE(b.last_order_id,-1) - a.last_order_id ,
+	COALESCE(b.last_order_apply_interval,-1)  - a.last_order_diff_day ,
+	COALESCE(b.last_order_cardtype,-1)  - a.last_order_card_type,
+	COALESCE(b.last_sucess_order_id,-1)  -a.last_successful_order_id ,
+	COALESCE(b.last_success_order_apply_interval,-1)  -a.last_successful_order_apply_diff_day ,
+	COALESCE(b.last_success_order_repay_interval,-1)  -a.last_successful_order_repay_diff_day,
+	b.apply_times  -a.apply_times,
+	b.order_times -a.loan_times,
+	b.repay_times -a.return_times ,
+	b.normal_repay_times  -a.normal_return_times ,
+	COALESCE(b.overdue_day,-1)  -a.overdue_day,
+	COALESCE(b.repay_in_advance,-1)  -a.prepayment_day rmdc_dw_test1.odps_telecom_temp
+from tb_tmp_check_data_for_h  a  left join  conform_order_final b on  b.id= a.order_id limit 100
