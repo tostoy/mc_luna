@@ -1,0 +1,86 @@
+--name:period_user_conform
+--author:Administrator
+--create time:2017-09-01 16:41
+-- 上次还款订单号, 还款次数
+CREATE TABLE p_user_1 (
+id BIGINT COMMENT '用户id',
+last_success_order_id BIGINT COMMENT '上次已还款订单号',
+repay_count BIGINT COMMENT '还款次数'
+);
+insert overwrite table p_user_1
+select a.id, max(b.id) as last_success_order_id, count(1) as repay_count
+from odps_loan_person a
+     left join  odps_user_loan_order_period b  on a.id =b.user_id
+     left  join (select * from (select *, row_number() over (partition by order_id order by created_at desc) as rn from odps_user_loan_order_repayment_period ) t where rn =1  ) c on b.id= c.order_id
+
+where c.status = 4   group by a.id;
+
+
+-- 上次申请订单号， 申请次数
+CREATE TABLE p_user_2 (
+id BIGINT COMMENT '用户id',
+last_apply_order_id BIGINT COMMENT '上次申请订单号',
+apply_count BIGINT COMMENT '申请次数'
+);
+insert overwrite table p_user_2
+select a.id, max(b.id) as last_apply_order_id, count(1) as apply_count
+from odps_loan_person a
+     left join  (select * from (select *, row_number() over (partition by order_id order by created_at desc) as rn from odps_user_loan_order_repayment_period ) t where rn =1  ) b  on a.id =b.user_id
+group by a.id;
+
+-- 申请次数
+
+
+
+-- 借款次数
+CREATE TABLE p_user_3 (
+id BIGINT COMMENT '用户id',
+loan_count BIGINT COMMENT '借款次数'
+);
+insert overwrite table p_user_3
+select a.id, count(1) as loan_count
+from odps_loan_person a
+     left join  odps_user_loan_order_period b  on a.id =b.user_id
+     left join (select * from (select *, row_number() over (partition by order_id order by created_at desc) as rn from odps_user_loan_order_repayment_period ) t where rn =1  ) c on b.id= c.order_id group by a.id;
+-- 正常还款次数
+CREATE TABLE p_user_4 (
+id BIGINT COMMENT '用户id',
+normal_repay_count BIGINT COMMENT '正常还款次数'
+);
+insert overwrite table p_user_3
+select a.id, count(1) as normal_repay_count
+from odps_loan_person a
+     left join  odps_user_loan_order_period b  on a.id =b.user_id
+     left join (select * from (select *, row_number() over (partition by order_id order by created_at desc) as rn from odps_user_loan_order_repayment_period ) t where rn =1  ) c on b.id= c.order_id
+where  c.status = 4 and c.true_repayment_time - b.created_at >= 4*86400 and c.overdue_day<=3 and a.pt = 20170815 group by a.id;
+
+-- 当前借款状态
+-- 建表
+
+CREATE TABLE conform_period_user (
+id BIGINT,
+last_success_order_id BIGINT,
+repay_count BIGINT,
+last_apply_order_id BIGINT,
+apply_count BIGINT,
+loan_count BIGINT,
+normal_repay_count BIGINT,
+current_status BIGINT,
+cur_order_id BIGINT,
+age BIGINT,
+city STRING
+);
+
+
+insert overwrite table conform_period_user
+select a.id, a.last_success_order_id, a.repay_count,
+       b.last_apply_order_id, b.apply_count,
+       c.loan_count, d.normal_repay_count,
+       e.status as current_status, e.id as cur_order_id,
+       datediff(getdate(),to_date(id_card_birthday(f.id_number),'yyyymmdd'),'yyyy') as age,
+       g.city as city
+from
+p_user_1 a left join p_user_2 b on a.id = b.id left join p_user_3 c on a.id=c.id left join p_user_4 d on a.id= d.id
+left join odps_user_loan_order_period e on b.last_apply_order_id = e.id
+left join odps_loan_person f on a.id = f.id
+left join odps_mobile_location g  on f.phone/10000= g.mobile;

@@ -1,0 +1,99 @@
+--name:extract_platform_count
+--author:Administrator
+--create time:2017-09-04 15:04
+
+CREATE TABLE platform_count (
+id BIGINT  COMMENT 'id',
+person_id BIGINT COMMENT 'person_id',
+credit_person_id BIGINT COMMENT 'credit_person_id',
+create_time STRING COMMENT '创建时间',
+update_time STRING COMMENT '创建时间',
+type BIGINT COMMENT '类型',
+platform_count_7_key STRING COMMENT '7天借贷 1447492',
+platform_count_7_value STRING COMMENT '7天借贷数值',
+platform_count_30_key STRING COMMENT '30天借贷 1447494',
+platform_count_30_value STRING COMMENT '30天借贷数值',
+platform_count_90_key STRING COMMENT '90天借贷 1447496',
+platform_count_90_value STRING COMMENT '90天借贷数值',
+platform_count_180_key STRING COMMENT '180天借贷 1447498',
+platform_count_180_value STRING COMMENT '180天借贷数值',
+platform_count_360_key STRING COMMENT '360天借贷 1447500',
+platform_count_360_value STRING COMMENT '360天借贷数值',
+platform_count_540_key STRING COMMENT '540天借贷 1447502',
+platform_count_540_value STRING COMMENT '540天借贷数值',
+platform_count_720_key STRING COMMENT '720天借贷 1447504',
+platform_count_720_value STRING COMMENT '720天借贷数值',
+pt STRING COMMENT '时间'
+);
+
+drop table platform_count_2;
+CREATE TABLE platform_count_2 (
+id STRING  COMMENT 'id',
+user_id BIGINT COMMENT 'credit_person_id',
+create_time STRING COMMENT '创建时间',
+update_time STRING COMMENT '创建时间',
+type BIGINT COMMENT '类型',
+platform_count_7_key STRING COMMENT '7天借贷 1447492',
+platform_count_30_key STRING COMMENT '30天借贷 1447494',
+platform_count_90_key STRING COMMENT '90天借贷 1447496',
+platform_count_180_key STRING COMMENT '180天借贷 1447498',
+platform_count_360_key STRING COMMENT '360天借贷 1447500',
+platform_count_540_key STRING COMMENT '540天借贷 1447502',
+platform_count_720_key STRING COMMENT '720天借贷 1447504'
+);
+
+
+insert overwrite table platform_count partition (pt)
+select id,person_id,credit_person_id,create_time,update_time,
+       type,
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447492)].item_detail.platform_count'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447492)].item_name'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447494)].item_detail.platform_count'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447494)].item_name'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447496)].item_detail.platform_count'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447496)].item_name'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447498)].item_detail.platform_count'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447498)].item_name'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447500)].item_detail.platform_count'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447500)].item_name'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447502)].item_detail.platform_count'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447502)].item_name'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447504)].item_detail.platform_count'),'$.[0]'),
+       json_parse(json_parse(records,'$.risk_items[?(@.item_id == 1447504)].item_name'),'$.[0]'),
+       pt
+from odps_loan_info where type=3;
+
+
+
+
+
+
+insert overwrite table platform_count_3
+select a.id,  c.id,  to_date(a.create_time,'yyyy-mm-dd hh:mi:ss'),to_date(a.update_time,'yyyy-mm-dd hh:mi:ss'), a.type,
+       a.platform_count_7_key,a.platform_count_30_key,a.platform_count_90_key,
+       a.platform_count_180_key,a.platform_count_360_key,a.platform_count_540_key,a.platform_count_720_key
+        from (select *,row_number() over (partition by credit_person_id order by create_time desc ) as rn from platform_count where credit_person_id is not null and credit_person_id<>'' and credit_person_id <>'null'
+)  a left join odps_credit_person b on a.credit_person_id = b.id left join odps_loan_person c on c.id_number = b.id_card and c.phone =b.mobile
+         where a.rn =1;
+
+
+CREATE TABLE platform_count_3 (
+id String  COMMENT 'id',
+user_id BIGINT COMMENT 'credit_person_id',
+create_time DATETIME COMMENT '创建时间',
+update_time DATETIME COMMENT '创建时间',
+type BIGINT COMMENT '类型',
+platform_count_7_key STRING COMMENT '7天借贷 1447492',
+platform_count_30_key STRING COMMENT '30天借贷 1447494',
+platform_count_90_key STRING COMMENT '90天借贷 1447496',
+platform_count_180_key STRING COMMENT '180天借贷 1447498',
+platform_count_360_key STRING COMMENT '360天借贷 1447500',
+platform_count_540_key STRING COMMENT '540天借贷 1447502',
+platform_count_720_key STRING COMMENT '720天借贷 1447504'
+);
+
+insert overwrite  table platform_count_3
+select id,user_id,to_date(create_time,'yyyy-mm-dd hh:mi:ss'),to_date(update_time,'yyyy-mm-dd hh:mi:ss'),
+type,platform_count_7_key ,platform_count_30_key ,platform_count_90_key ,platform_count_180_key ,platform_count_360_key,
+platform_count_540_key ,platform_count_720_key
+from platform_count_2

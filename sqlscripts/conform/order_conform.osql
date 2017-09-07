@@ -2,9 +2,102 @@
 --author:Administrator
 --create time:2017-08-22 15:22
 
--- 一对多情况
+CREATE TABLE conform_order_final (
+id BIGINT,
+list_no BIGINT,
+success_no BIGINT,
+last_order_id BIGINT,
+last_order_apply_interval BIGINT,
+last_order_cardtype BIGINT,
+last_sucess_order_id BIGINT,
+last_success_order_apply_interval BIGINT,
+last_success_order_repay_interval BIGINT,
+last_success_order_cardtype BIGINT,
+apply_times BIGINT,
+order_times BIGINT,
+repay_times BIGINT,
+normal_repay_times BIGINT,
+overdue_day BIGINT,
+repay_in_advance BIGINT
+);
 
 
+
+-- 导出到结果集
+insert overwrite table  conform_order_final
+select  a.id,
+        COALESCE(a.apply_times,0) +  COALESCE(b.apply_times,0) + 1,
+        COALESCE(a.success_no, 0) + COALESCE(b.success_no,0),
+        if(o.created_at > po.created_at or po.created_at is null, a.last_order_id, b.last_order_id ),
+        if(o.created_at > po.created_at or po.created_at is null, a.last_order_apply_interval, b.last_order_apply_interval ),
+   if(o.created_at > po.created_at or po.created_at is null, a.last_order_cardtype, b.last_order_cardtype ),
+   if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_sucess_order_id, b.last_sucess_order_id ),
+   if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_success_order_apply_interval, b.last_success_order_apply_interval ),
+   if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_success_order_repay_interval, b.last_success_order_repay_interval ),
+   if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_success_order_cardtype, b.last_success_order_cardtype ),
+        COALESCE(a.apply_times,0) +  COALESCE(b.apply_times,0),
+         COALESCE(a.order_times,0) +  COALESCE(b.order_times,0),
+         COALESCE(a.repay_times,0) +  COALESCE(b.repay_times,0),
+         COALESCE(a.normal_repay_times,0) +  COALESCE(b.normal_repay_times,0),
+        a.overdue_day,
+        a.repay_in_advance
+from conform_order a left join conform_order_1 b on a.id =b.id
+left join odps_user_loan_order o on a.last_order_id =o.id
+left join odps_user_loan_order_period po on b.last_order_id =po.id
+left join odps_user_loan_order o_s on a.last_sucess_order_id =o_s.id
+left join odps_user_loan_order_period po_s on b.last_sucess_order_id =po_s.id;
+
+
+-- 找到最近的一笔成功分期卡信息 order
+
+
+
+
+CREATE TABLE conform_order_1 (
+id BIGINT,
+list_no BIGINT,
+success_no BIGINT,
+last_order_id BIGINT,
+last_order_apply_interval BIGINT,
+last_order_cardtype BIGINT,
+last_sucess_order_id BIGINT,
+last_success_order_apply_interval BIGINT,
+last_success_order_repay_interval BIGINT,
+last_success_order_cardtype BIGINT,
+apply_times BIGINT,
+order_times BIGINT,
+repay_times BIGINT,
+normal_repay_times BIGINT,
+overdue_day BIGINT,
+repay_in_advance BIGINT
+);
+
+
+insert overwrite table conform_order_1
+select a.id,
+       a.row_num as list_no,
+       d.row_num2 as success_no,
+       pre_order.id as last_order_id,
+       datediff(from_unixtime(a.created_at) ,FROM_UNIXTIME(pre_order.created_at),'dd')  as last_order_apply_interval,
+       pre_order.card_type as last_order_cardtype,
+       pre_success_order.id as last_sucess_order_id,
+       datediff(from_unixtime(a.created_at) ,FROM_UNIXTIME(pre_success_order.created_at),'dd')  as last_success_order_apply_interval,
+        datediff(from_unixtime(a.created_at) ,FROM_UNIXTIME(pre_success_order_repayment.true_repayment_time),'dd')  as last_success_order_repay_interval,
+       pre_success_order.card_type as last_success_order_cardtype,
+       d.row_num1 as apply_times,
+       d.row_num2 as order_times,
+       d.row_num3 as repay_times,
+       d.row_num4 as normal_repay_times,
+       repay.overdue_day as overdue_day,
+       datediff(from_unixtime(repay.plan_fee_time),FROM_UNIXTIME(repay.true_repayment_time),'dd') as repay_in_advance
+from order_6 a
+     left join (select a.id,max(b.id) as p_id from order_5 a left join p_order_1 b on a.user_id = b.user_id where a.created_at >  b.created_at group by a.id ) b on a.id =b.id
+     left join (select a.id,max(b.id) as p_id from order_5 a left join p_order_2 b on a.user_id = b.user_id where a.created_at >  b.created_at group by a.id ) c on a.id =c.id
+     left join odps_user_loan_order_period pre_order on pre_order.id = b.p_id
+     left join odps_user_loan_order_period pre_success_order on pre_success_order.id = c.p_id
+     left join  (select * from (select *, row_number() over (partition by order_id order by created_at desc) as rn from odps_user_loan_order_repayment_period ) t where rn =1  )  pre_success_order_repayment  on pre_success_order.id = pre_success_order_repayment.order_id
+     left join p_order_6 d on b.p_id = d.id
+     left join  odps_user_loan_order_repayment repay on a.id =  repay.order_id;
 -- 扩展特征
 -- 订单序号
 -- 成功订单序号
@@ -21,29 +114,49 @@
 -- 正常还款次数
 -- overdue_day
 -- 提前还款天数
+CREATE TABLE conform_order (
+id BIGINT,
+list_no BIGINT,
+success_no BIGINT,
+last_order_id BIGINT,
+last_order_apply_interval BIGINT,
+last_order_cardtype BIGINT,
+last_sucess_order_id BIGINT,
+last_success_order_apply_interval BIGINT,
+last_success_order_repay_interval BIGINT,
+last_success_order_cardtype BIGINT,
+apply_times BIGINT,
+order_times BIGINT,
+repay_times BIGINT,
+normal_repay_times BIGINT,
+overdue_day BIGINT,
+repay_in_advance BIGINT
+);
 
+
+insert overwrite table conform_order
 select a.id,
        a.row_num as list_no,
        a.row_num2 as success_no,
        c.id as last_order_id,
-       (a.created_at -pre_order.created_at)/86400   as last_order_apply_interval,
-        pre_order.card_type as last_order_cardtype,
-       b.id as last_sucess_order_id,
-       (a.created_at   -pre_success_order.created_at)/86400  as last_success_order_apply_interval,
-       (a.created_at   -pre_success_order_repayment.true_repayment_time)/86400  as last_success_order_apply_interval,
-        pre_success_order.card_type as last_success_order_cardtype,
-        d.row_num1 as apply_times,
-         d.row_num2 as order_times,
-         d.row_num3 as repay_times,
-         d.row_num4 as normal_repay_times,
-         repay.overdue_day as overdue_day,
-         repay.true_repayment_time- repay.plan_repayment_time as repay_in_advance
-       from order_5 a
-left join order_5 b on a.user_id = b.user_id and a.row_num2 =  b.row_num2 + 1
+       datediff(from_unixtime(a.created_at) ,FROM_UNIXTIME(pre_order.created_at),'dd')  as last_order_apply_interval,
+       pre_order.card_type as last_order_cardtype,
+       pre_success_order.id as last_sucess_order_id,
+       datediff(from_unixtime(a.created_at) ,FROM_UNIXTIME(pre_success_order.created_at),'dd')  as last_success_order_apply_interval,
+       datediff(from_unixtime(a.created_at) ,FROM_UNIXTIME(pre_success_order_repayment.true_repayment_time),'dd')  as last_success_order_repay_interval,
+       pre_success_order.card_type as last_success_order_cardtype,
+       GREATEST(d.row_num1-1,0) as apply_times,
+       if(repay.id is null,d.row_num2,d.row_num2-1 ) as order_times,
+       if(repay.id is not null and repay.status = 4,d.row_num3 -1,d.row_num3 ) as repay_times,
+       if(repay.id is not null and repay.status = 4  and repay.true_repayment_time - a.created_at >= 4*86400 and repay.overdue_day<=3 ,d.row_num4-1,d.row_num4 ) as normal_repay_times,
+       repay.overdue_day as overdue_day,
+       datediff(from_unixtime(repay.plan_fee_time),FROM_UNIXTIME(repay.true_repayment_time),'dd') as repay_in_advance
+       from order_6 a
+left join (select a.id,max(b.id) as p_id from order_5 a left join order_2 b on a.user_id = b.user_id where a.created_at >  b.created_at group by a.id ) b on a.id =b.id
 left join order_5 c on a.user_id = c.user_id and a.row_num1 =  c.row_num1 +1
 left join odps_user_loan_order pre_order on pre_order.id = c.id
-left join odps_user_loan_order pre_success_order on pre_success_order.id = b.id
-left join odps_user_loan_order_repayment pre_success_order_repayment  on pre_success_order.id = pre_success_order_repayment.order_id
+left join odps_user_loan_order pre_success_order on pre_success_order.id = b.p_id
+left join (select * from (select *, row_number() over (partition by order_id order by created_at desc) as rn from odps_user_loan_order_repayment_period ) t where rn =1  ) pre_success_order_repayment  on pre_success_order.id = pre_success_order_repayment.order_id
 left join order_6 d on a.id = d.id
 left join odps_user_loan_order_repayment repay on a.id =  repay.order_id;
 
@@ -70,7 +183,7 @@ select a.id, a.user_id, a.created_at, a.card_type, a.status,
        b.row_num4,
        a.row_num
 from order_5 a join(
-                   select a.id as id, max(b.row_num2) as row_num1,max(b.row_num2) as row_num2,max(b.row_num3) as row_num3,max(b.row_num4) as row_num4 from order_5 a left join  order_5 b on a.user_id =b.user_id where a.id >= b.id group by a.id
+                   select a.id as id, max(b.row_num1) as row_num1,max(b.row_num2) as row_num2,max(b.row_num3) as row_num3,max(b.row_num4) as row_num4 from order_5 a left join  order_5 b on a.user_id =b.user_id where a.id >= b.id group by a.id
                    ) b on a.id = b.id;
 
 select *, row_number() over(partition  by user_id order by created_at) from order_6;
