@@ -1,6 +1,97 @@
 --name:order_conform
 --author:Administrator
 --create time:2017-08-22 15:22
+CREATE TABLE conform_order_union (
+id BIGINT,
+user_id BIGINT,
+cardtype BIGINT,
+created_at BIGINT,
+last_order_created_at BIGINT,
+last_success_order_created_at BIGINT,
+last_success_order_true_repayment_time BIGINT,
+tag BIGINT comment "白卡 0, 分期卡1",
+list_no BIGINT,
+success_no BIGINT,
+last_order_id BIGINT,
+last_order_apply_interval BIGINT,
+last_order_cardtype BIGINT,
+last_success_order_id BIGINT,
+last_success_order_apply_interval BIGINT,
+last_success_order_repay_interval BIGINT,
+last_success_order_cardtype BIGINT,
+apply_times BIGINT,
+order_times BIGINT,
+repay_times BIGINT,
+normal_repay_times BIGINT,
+overdue_day BIGINT,
+repay_in_advance BIGINT
+);
+insert overwrite table conform_order_union
+select * from conform_order_final_v1 union select * from conform_period_order_final_v1;
+
+CREATE TABLE conform_order_final_v1 (
+id BIGINT,
+user_id BIGINT,
+cardtype BIGINT,
+created_at BIGINT,
+last_order_created_at BIGINT,
+last_success_order_created_at BIGINT,
+last_success_order_true_repayment_time BIGINT,
+tag BIGINT comment "白卡 0, 分期卡1",
+list_no BIGINT,
+success_no BIGINT,
+last_order_id BIGINT,
+last_order_apply_interval BIGINT,
+last_order_cardtype BIGINT,
+last_success_order_id BIGINT,
+last_success_order_apply_interval BIGINT,
+last_success_order_repay_interval BIGINT,
+last_success_order_cardtype BIGINT,
+apply_times BIGINT,
+order_times BIGINT,
+repay_times BIGINT,
+normal_repay_times BIGINT,
+overdue_day BIGINT,
+repay_in_advance BIGINT
+);
+
+
+insert overwrite table  conform_order_final_v1
+select  a.id,
+        orders.user_id,
+        orders.card_type,
+        orders.created_at,
+        if(o.created_at > po.created_at or po.created_at is null, o.created_at, po.created_at ),
+        if(o_s.created_at > po_s.created_at or po_s.created_at is null, o_s.created_at, po_s.created_at ),
+        if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_success_order_true_repayment_time, b.last_success_order_true_repayment_time ),
+        0,
+        COALESCE(a.apply_times,0) +  COALESCE(b.apply_times,0) + 1,
+        COALESCE(a.success_no, 0) + COALESCE(b.success_no,0),
+        if(o.created_at > po.created_at or po.created_at is null, a.last_order_id, b.last_order_id ),
+        if(o.created_at > po.created_at or po.created_at is null, a.last_order_apply_interval, b.last_order_apply_interval ),
+        if(o.created_at > po.created_at or po.created_at is null, a.last_order_cardtype, b.last_order_cardtype ),
+        if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_sucess_order_id, b.last_sucess_order_id ),
+        if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_success_order_apply_interval, b.last_success_order_apply_interval ),
+        if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_success_order_repay_interval, b.last_success_order_repay_interval ),
+        if(o_s.created_at > po_s.created_at or po_s.created_at is null, a.last_success_order_cardtype, b.last_success_order_cardtype ),
+        COALESCE(a.apply_times,0) +  COALESCE(b.apply_times,0),
+        COALESCE(a.order_times,0) +  COALESCE(b.order_times,0),
+        COALESCE(a.repay_times,0) +  COALESCE(b.repay_times,0),
+        COALESCE(a.normal_repay_times,0) +  COALESCE(b.normal_repay_times,0),
+        a.overdue_day,
+        a.repay_in_advance
+from conform_order a left join conform_order_1 b on a.id =b.id
+     left join odps_user_loan_order orders on a.id=orders.id
+     left join odps_user_loan_order o on a.last_order_id =o.id
+     left join odps_user_loan_order_period po on b.last_order_id =po.id
+     left join odps_user_loan_order o_s on a.last_sucess_order_id =o_s.id
+     left join odps_user_loan_order_period po_s on b.last_sucess_order_id =po_s.id;
+
+
+
+
+
+
 
 CREATE TABLE conform_order_final (
 id BIGINT,
@@ -52,7 +143,7 @@ left join odps_user_loan_order_period po_s on b.last_sucess_order_id =po_s.id;
 
 
 
-
+drop table conform_order_1;
 CREATE TABLE conform_order_1 (
 id BIGINT,
 list_no BIGINT,
@@ -69,7 +160,8 @@ order_times BIGINT,
 repay_times BIGINT,
 normal_repay_times BIGINT,
 overdue_day BIGINT,
-repay_in_advance BIGINT
+repay_in_advance BIGINT,
+last_success_order_true_repayment_time  BIGINT
 );
 
 
@@ -89,7 +181,8 @@ select a.id,
        d.row_num3 as repay_times,
        d.row_num4 as normal_repay_times,
        repay.overdue_day as overdue_day,
-       datediff(from_unixtime(repay.plan_fee_time),FROM_UNIXTIME(repay.true_repayment_time),'dd') as repay_in_advance
+       datediff(from_unixtime(repay.plan_fee_time),FROM_UNIXTIME(repay.true_repayment_time),'dd') as repay_in_advance,
+       pre_success_order_repayment.true_repayment_time
 from order_6 a
      left join (select a.id,max(b.id) as p_id from order_5 a left join p_order_1 b on a.user_id = b.user_id where a.created_at >  b.created_at group by a.id ) b on a.id =b.id
      left join (select a.id,max(b.id) as p_id from order_5 a left join p_order_2 b on a.user_id = b.user_id where a.created_at >  b.created_at group by a.id ) c on a.id =c.id
@@ -114,6 +207,7 @@ from order_6 a
 -- 正常还款次数
 -- overdue_day
 -- 提前还款天数
+drop table conform_order;
 CREATE TABLE conform_order (
 id BIGINT,
 list_no BIGINT,
@@ -130,7 +224,8 @@ order_times BIGINT,
 repay_times BIGINT,
 normal_repay_times BIGINT,
 overdue_day BIGINT,
-repay_in_advance BIGINT
+repay_in_advance BIGINT,
+last_success_order_true_repayment_time  BIGINT
 );
 
 
@@ -150,31 +245,21 @@ select a.id,
        if(repay.id is not null and repay.status = 4,d.row_num3 -1,d.row_num3 ) as repay_times,
        if(repay.id is not null and repay.status = 4  and repay.true_repayment_time - a.created_at >= 4*86400 and repay.overdue_day<=3 ,d.row_num4-1,d.row_num4 ) as normal_repay_times,
        repay.overdue_day as overdue_day,
-       datediff(from_unixtime(repay.plan_fee_time),FROM_UNIXTIME(repay.true_repayment_time),'dd') as repay_in_advance
+       datediff(from_unixtime(repay.plan_fee_time),FROM_UNIXTIME(repay.true_repayment_time),'dd') as repay_in_advance,
+       pre_success_order_repayment.true_repayment_time
        from order_6 a
 left join (select a.id,max(b.id) as p_id from order_5 a left join order_2 b on a.user_id = b.user_id where a.created_at >  b.created_at group by a.id ) b on a.id =b.id
 left join order_5 c on a.user_id = c.user_id and a.row_num1 =  c.row_num1 +1
 left join odps_user_loan_order pre_order on pre_order.id = c.id
 left join odps_user_loan_order pre_success_order on pre_success_order.id = b.p_id
-left join (select * from (select *, row_number() over (partition by order_id order by created_at desc) as rn from odps_user_loan_order_repayment_period ) t where rn =1  ) pre_success_order_repayment  on pre_success_order.id = pre_success_order_repayment.order_id
+left join odps_user_loan_order_repayment pre_success_order_repayment  on pre_success_order.id = pre_success_order_repayment.order_id
 left join order_6 d on a.id = d.id
 left join odps_user_loan_order_repayment repay on a.id =  repay.order_id;
 
 
 -- 填充null 作为借款次数特征
 
-CREATE TABLE order_6 (
-id BIGINT COMMENT '订单id',
-user_id BIGINT COMMENT 'user id',
-created_at BIGINT COMMENT '创建时间',
-card_type BIGINT COMMENT '卡类型',
-status BIGINT COMMENT '卡状态',
-row_num1 BIGINT COMMENT '行列1',
-row_num2 BIGINT COMMENT '行列2',
-row_num3 BIGINT COMMENT '行列3',
-row_num4 BIGINT COMMENT '行列4',
-row_num BIGINT COMMENT '行列'
-);
+
 insert overwrite table order_6
 select a.id, a.user_id, a.created_at, a.card_type, a.status,
        b.row_num1,
@@ -189,18 +274,7 @@ from order_5 a join(
 select *, row_number() over(partition  by user_id order by created_at) from order_6;
 
 -- 生成中间表00
-CREATE TABLE order_5 (
-id BIGINT COMMENT '订单id',
-user_id BIGINT COMMENT 'user id',
-created_at BIGINT COMMENT '创建时间',
-card_type BIGINT COMMENT '卡类型',
-status BIGINT COMMENT '卡状态',
-row_num1 BIGINT COMMENT '行列1',
-row_num2 BIGINT COMMENT '行列2',
-row_num3 BIGINT COMMENT '行列3',
-row_num4 BIGINT COMMENT '行列4',
-row_num BIGINT COMMENT '行列'
-);
+
 insert overwrite table order_5
 select a.id, a.user_id, a.created_at, a.card_type, a.status,
        COALESCE(order_1.row_num,0),
@@ -214,6 +288,35 @@ from odps_user_loan_order a left join order_1 on a.id =order_1.id left join orde
 
 
 -- 申请次数列表
+
+insert overwrite table order_1
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn
+from odps_user_loan_order a;
+
+-- 借款次数列表
+
+insert overwrite table order_2
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
+b.true_repayment_time,b.overdue_day
+from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id;
+
+-- 还款订单序列表 （有还款记录且还款记录状态为4）
+
+insert overwrite table order_3
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
+b.true_repayment_time, b.overdue_day
+from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id where b.status = 4;
+
+
+-- 正常还款订单记录表
+
+insert overwrite table order_4
+select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
+        b.true_repayment_time, b.overdue_day
+from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id where  b.status = 4 and b.true_repayment_time - a.created_at >= 4*86400 and b.overdue_day<=3 ;
+
+
+-- 准备
 CREATE TABLE order_1 (
 id BIGINT COMMENT '订单id',
 user_id BIGINT COMMENT 'user id',
@@ -222,11 +325,6 @@ card_type BIGINT COMMENT '卡类型',
 status BIGINT COMMENT '卡状态',
 row_num BIGINT COMMENT '行列'
 );
-insert overwrite table order_1
-select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn
-from odps_user_loan_order a;
-
--- 借款次数列表
 CREATE TABLE order_2 (
 id BIGINT COMMENT '订单id',
 user_id BIGINT COMMENT 'user id',
@@ -237,12 +335,6 @@ row_num BIGINT COMMENT '行列',
 true_repayment_time BIGINT COMMENT '真实还款时间',
 overdue_day BIGINT COMMENT '逾期'
 );
-insert overwrite table order_2
-select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
-b.true_repayment_time,b.overdue_day
-from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id;
-
--- 还款订单序列表 （有还款记录且还款记录状态为4）
 CREATE TABLE order_3(
 id BIGINT COMMENT '订单id',
 user_id BIGINT COMMENT 'user id',
@@ -253,13 +345,7 @@ row_num BIGINT COMMENT '行列',
 true_repayment_time BIGINT COMMENT '真实还款时间',
 overdue_day BIGINT COMMENT '逾期'
 );
-insert overwrite table order_3
-select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
-b.true_repayment_time, b.overdue_day
-from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id where b.status = 4;
 
-
--- 正常还款订单记录表
 CREATE TABLE order_4(
 id BIGINT COMMENT '订单id',
 user_id BIGINT COMMENT 'user id',
@@ -270,13 +356,31 @@ row_num BIGINT COMMENT '行列',
 true_repayment_time BIGINT COMMENT '真实还款时间',
 overdue_day BIGINT COMMENT '逾期'
 );
-insert overwrite table order_4
-select  a.id,a.user_id,a.created_at,a.card_type,a.status, row_number() over(partition by a.user_id order by a.created_at) as order_rn,
-        b.true_repayment_time, b.overdue_day
-from odps_user_loan_order a join odps_user_loan_order_repayment b on a.id= b.order_id where  b.status = 4 and b.true_repayment_time - a.created_at >= 4*86400 and b.overdue_day<=3 ;
+CREATE TABLE order_5 (
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num1 BIGINT COMMENT '行列1',
+row_num2 BIGINT COMMENT '行列2',
+row_num3 BIGINT COMMENT '行列3',
+row_num4 BIGINT COMMENT '行列4',
+row_num BIGINT COMMENT '行列'
+);
+CREATE TABLE order_6 (
+id BIGINT COMMENT '订单id',
+user_id BIGINT COMMENT 'user id',
+created_at BIGINT COMMENT '创建时间',
+card_type BIGINT COMMENT '卡类型',
+status BIGINT COMMENT '卡状态',
+row_num1 BIGINT COMMENT '行列1',
+row_num2 BIGINT COMMENT '行列2',
+row_num3 BIGINT COMMENT '行列3',
+row_num4 BIGINT COMMENT '行列4',
+row_num BIGINT COMMENT '行列'
+);
 
-
--- 准备
 
 
 
