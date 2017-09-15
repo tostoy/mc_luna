@@ -1,0 +1,119 @@
+create table period_featue(
+	user_id BIGINT comment 'user_id',
+    order_id BIGINT comment 'order_id',
+    max_overdue_day BIGINT comment '最大逾期天数',
+    loan_times BIGINT comment '借款次数',
+
+);
+
+drop table odps_finance_period_feature;
+CREATE TABLE odps_finance_period_feature (
+id String  COMMENT 'id',
+	create_time STRING,
+	person_id BIGINT,
+	id_card STRING,
+	provider_type BIGINT,
+	update_time STRING,
+feature1 STRING COMMENT '保留报告内地址，地址与报告内是否匹配',
+feature2 BIGINT COMMENT '填写地址总个数',
+feature3 BIGINT COMMENT '不同工作单位个数',
+feature4 BOOLEAN COMMENT '是否有配偶联系方式',
+feature5 BIGINT COMMENT '第一联系人信息是否在通讯录出现',
+feature6 BIGINT COMMENT '第二联系人信息是否在通讯录出现',
+feature7 BIGINT COMMENT '贷款笔数',
+feature8 BIGINT COMMENT '最大授信额度',
+feature9 BIGINT COMMENT '贷款总额',
+feature10 BIGINT COMMENT '贷款余额',
+feature11 BIGINT COMMENT '协定月还款',
+feature12 BIGINT COMMENT '当前逾期总额',
+feature13 BIGINT COMMENT '最高逾期金额',
+feature14 BIGINT COMMENT '最高逾期期数',
+feature15 BIGINT COMMENT '最近六个月内贷款申请笔数',
+feature16 BIGINT COMMENT '贷款审批近1个月内查询次数',
+feature17 BIGINT COMMENT '贷款审批近3个月内查询次数',
+feature18 BIGINT COMMENT '贷款审批近6个月内查询次数',
+feature19 BIGINT COMMENT '贷后管理近1个月内查询次数',
+feature20 BIGINT COMMENT '贷后管理近3个月内查询次数',
+feature21 BIGINT COMMENT '贷后管理近6个月内查询次数'
+) PARTITIONED BY (
+	pt STRING
+);
+drop table odps_taobao_period_feature;
+CREATE TABLE odps_taobao_period_feature (
+id String  COMMENT 'id',
+	open_id STRING,
+	person_id BIGINT,
+	provider_type STRING,
+	created_time STRING,
+	taobaoname STRING,
+	loginemail STRING,
+	bindingmobile STRING,
+	accounttype STRING,
+	realname STRING,
+	growth STRING,
+	creditpoint STRING,
+	taobaoaddress STRING,
+	alipayemail STRING,
+	alipaymobile STRING,
+	goodrate STRING,
+	middlerate STRING,
+	badrate STRING,
+	tianmaopoint STRING,
+	tianmaolevel STRING,
+	tianmaocreditlevel STRING,
+	tianmaoexperience STRING,
+	exception STRING,
+feature1 BIGINT COMMENT '成长值',
+feature2 BIGINT COMMENT '天猫等级',
+feature3 BIGINT COMMENT '天猫VIP值',
+feature4 BIGINT COMMENT '天猫信誉',
+feature5 BIGINT COMMENT '近6个月月均消费金额',
+feature6 BIGINT COMMENT '本人收货地址数',
+feature7 BIGINT COMMENT '本人不同收货地址数'
+) PARTITIONED BY (
+  pt STRING
+  );
+
+drop table odps_jd_period_feature;
+CREATE TABLE odps_jd_period_feature (
+id String  COMMENT 'id',
+	open_id STRING,
+	person_id BIGINT,
+	provider_type BIGINT,
+	create_time DATETIME,
+feature1 BIGINT COMMENT '京东VIP值',
+feature2 BIGINT COMMENT '京东等级',
+feature3 BIGINT COMMENT '小白信用分',
+feature4 BOOLEAN COMMENT '白条总额度',
+feature5 BIGINT COMMENT '白条逾期',
+feature6 BIGINT COMMENT '本人收货地址数',
+feature7 BIGINT COMMENT '本人不同收货地址数',
+feature8 BIGINT COMMENT '近6个月月均消费金额'
+) PARTITIONED BY (
+  pt STRING
+  );
+
+
+drop table odps_credit_card_period_feature;
+CREATE TABLE odps_credit_card_period_feature (
+id String  COMMENT 'id',
+	type STRING,
+	person_id STRING,
+	account_name STRING,
+	collect_token STRING,
+	update_time STRING,
+	create_time STRING,
+feature1 BIGINT COMMENT '滞纳金金额',
+feature2 BIGINT COMMENT '信用卡账龄',
+feature3 BIGINT COMMENT '当月额度使用率sum',
+feature4 BOOLEAN COMMENT '近12个月现金分期笔数',
+feature5 BIGINT COMMENT '信用卡张数',
+feature6 BIGINT COMMENT '信用卡总额度',
+feature7 BIGINT COMMENT '近12个月取现月数',
+feature8 BIGINT COMMENT '单行最高授信额度',
+feature9 BIGINT COMMENT '单行最低授信额度',
+feature10 BIGINT COMMENT '利息交易金额',
+feature11 BIGINT COMMENT '分期手续费金额'
+) PARTITIONED BY (
+  pt STRING
+  );
