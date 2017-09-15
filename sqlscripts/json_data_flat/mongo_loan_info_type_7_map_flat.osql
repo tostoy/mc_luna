@@ -1,0 +1,92 @@
+/* CREATE TABLE odps_loan_info_type_7_map_flat (
+	id STRING COMMENT 'id',
+	credit_person_id BIGINT COMMENT 'credit_person_id',
+	`21160001` STRING,
+	`21160002` STRING,
+	`21160003` STRING,
+	`21160004` STRING,
+	`21160005` STRING,
+	`21160006` STRING,
+	`21160007` STRING,
+	`21160008` STRING,
+	`21160009` STRING,
+	`21160010` STRING,
+	`21170001` STRING,
+	`21170002` STRING,
+	`21170003` STRING,
+	`21170004` STRING,
+	`21170005` STRING,
+	`21170006` STRING,
+	`21170007` STRING,
+	`21170008` STRING,
+	`21170009` STRING,
+	`21170010` STRING,
+	`21170011` STRING,
+	`21170012` STRING,
+	`21170013` STRING,
+	`21170014` STRING,
+	`21170015` STRING,
+	`21170016` STRING,
+	`21170017` STRING,
+	`21180001` STRING,
+	`21180002` STRING,
+	`21180003` STRING,
+	`21180004` STRING,
+	`21180005` STRING,
+	`21180006` STRING,
+	`21180007` STRING,
+	`21180008` STRING,
+	`21180009` STRING,
+	`21180010` STRING,
+	`21180011` STRING,
+	`21180012` STRING
+)
+PARTITIONED BY (
+	pt STRING COMMENT '时间'
+); */
+insert overwrite table odps_loan_info_type_7_map_flat partition(pt)
+SELECT id, credit_person_id, get_json_object(records, '$.map.21160001') AS `21160001`
+	, get_json_object(records, '$.map.21160002') AS `21160002`
+	, get_json_object(records, '$.map.21160003') AS `21160003`
+	, get_json_object(records, '$.map.21160004') AS `21160004`
+	, get_json_object(records, '$.map.21160005') AS `21160005`
+	, get_json_object(records, '$.map.21160006') AS `21160006`
+	, get_json_object(records, '$.map.21160007') AS `21160007`
+	, get_json_object(records, '$.map.21160008') AS `21160008`
+	, get_json_object(records, '$.map.21160009') AS `21160009`
+	, get_json_object(records, '$.map.21160010') AS `21160010`
+	, get_json_object(records, '$.map.21170001') AS `21170001`
+	, get_json_object(records, '$.map.21170002') AS `21170002`
+	, get_json_object(records, '$.map.21170003') AS `21170003`
+	, get_json_object(records, '$.map.21170004') AS `21170004`
+	, get_json_object(records, '$.map.21170005') AS `21170005`
+	, get_json_object(records, '$.map.21170006') AS `21170006`
+	, get_json_object(records, '$.map.21170007') AS `21170007`
+	, get_json_object(records, '$.map.21170008') AS `21170008`
+	, get_json_object(records, '$.map.21170009') AS `21170009`
+	, get_json_object(records, '$.map.21170010') AS `21170010`
+	, get_json_object(records, '$.map.21170011') AS `21170011`
+	, get_json_object(records, '$.map.21170012') AS `21170012`
+	, get_json_object(records, '$.map.21170013') AS `21170013`
+	, get_json_object(records, '$.map.21170014') AS `21170014`
+	, get_json_object(records, '$.map.21170015') AS `21170015`
+	, get_json_object(records, '$.map.21170016') AS `21170016`
+	, get_json_object(records, '$.map.21170017') AS `21170017`
+	, get_json_object(records, '$.map.21180001') AS `21180001`
+	, get_json_object(records, '$.map.21180002') AS `21180002`
+	, get_json_object(records, '$.map.21180003') AS `21180003`
+	, get_json_object(records, '$.map.21180004') AS `21180004`
+	, get_json_object(records, '$.map.21180005') AS `21180005`
+	, get_json_object(records, '$.map.21180006') AS `21180006`
+	, get_json_object(records, '$.map.21180007') AS `21180007`
+	, get_json_object(records, '$.map.21180008') AS `21180008`
+	, get_json_object(records, '$.map.21180009') AS `21180009`
+	, get_json_object(records, '$.map.21180010') AS `21180010`
+	, get_json_object(records, '$.map.21180011') AS `21180011`
+	, get_json_object(records, '$.map.21180012') AS `21180012`, pt
+FROM odps_loan_info
+-- WHERE pt < 20170912
+ WHERE pt = '${bdp.system.bizdate}'
+	AND type = 7
+	AND pt IS NOT NULL
+LIMIT 1

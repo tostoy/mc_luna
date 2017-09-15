@@ -1,0 +1,17 @@
+
+
+
+
+
+
+-- 上海资信
+--  填写地址总个数
+select json_parse(json_parse(x_data,'$..地址序号'),'$.length()')
+ from odps_finance limit 100;
+
+-- 是否有配偶联系方式
+select json_parse(json_parse(x_data,'$..地址序号'),'$.length()')
+from odps_finance limit 100;
+
+
+--
