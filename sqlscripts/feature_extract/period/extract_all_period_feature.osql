@@ -1,1 +1,25 @@
-select * from odps_loan_order_period
+-- 白卡相关特征
+insert overwrite table  period_featue
+SELECT 
+a.uid ,
+    b.order_id,
+      max_overdue_day,
+      loan_times,
+      b.overdue_day,
+      overdue_times,
+      t.amount
+FROM
+  (SELECT user_id AS uid,
+          MAX(overdue_day) AS max_overdue_day,
+          COUNT(order_id) AS loan_times,
+          sum(case when overdue_day>0 then 1 else 0 end) AS overdue_times
+  FROM odps_user_loan_order_repayment
+  WHERE created_at BETWEEN unix_timestamp('2017-1-1') AND unix_timestamp('2017-8-6')
+  GROUP BY user_id) AS a
+JOIN odps_user_loan_order_repayment_period AS b ON a.uid=b.user_id
+inner join odps_user_credit_total t on b.user_id=t.user_id
+WHERE b.loan_time BETWEEN unix_timestamp('2017-5-26') AND unix_timestamp('2017-8-6')
+  AND b.period=1
+ group by 1,2,3,4,5
+
+-- 分期卡相关特征

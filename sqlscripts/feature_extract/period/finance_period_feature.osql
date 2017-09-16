@@ -1,11 +1,11 @@
-insert overwrite table odps_finance_period_feature partition(pt)
-select id, create_time, person_id, id_card,provider_type,update_time,
-       get_json_object(x_data,'$.个人身份信息.地址.地址明细'),
+insert overwrite table finance_period_feature
+select pf.user_id, pf.order_id,
+   get_json_object(x_data,'$.个人身份信息.地址.地址明细'),
        json_parse(json_parse(x_data,'$..地址序号'),'$.length()'),
        json_parse(json_parse(x_data,'$..地址序号'),'$.length()'),
        json_parse(x_data,'$..第一联系人信息.[?(@.联系人关系 == "配偶")]') is not null,
-       0,
-       0,
+       get_json_object(x_data,'$.个人身份信息.第一联系人信息.联系电话'),
+       get_json_object(x_data,'$.个人身份信息.第二联系人信息.联系电话'),
        get_json_object(x_data,'$.贷款交易信息.信息概要.贷款笔数'),
        get_json_object(x_data,'$.贷款交易信息.信息概要.最大授信额度'),
        get_json_object(x_data,'$.贷款交易信息.信息概要.贷款总额'),
@@ -14,11 +14,43 @@ select id, create_time, person_id, id_card,provider_type,update_time,
        get_json_object(x_data,'$.贷款交易信息.信息概要.当前逾期总额'),
        get_json_object(x_data,'$.贷款交易信息.信息概要.最高逾期金额'),
        get_json_object(x_data,'$.贷款交易信息.信息概要.最高逾期期数'),
-       REGEXP_EXTRACT(json_parse(x_data,'$.资信提示信息.资信提示[?(@.项目 == "01.最近六个月内贷款申请信息")].提示内容'),'\u003d (\\d+)',1),       0,
-       json_parse(json_parse(x_data,'$..[?(@.查询原因 == "贷款审批")]'),'$.length()'),
-       0,
-       0,
-       json_parse(json_parse(x_data,'$..[?(@.查询原因 == "贷后管理")]'),'$.length()'),
-       0,
-       0
-from odps_finance;
+       REGEXP_EXTRACT(json_parse(x_data,'$.资信提示信息.资信提示[?(@.项目 == "01.最近六个月内贷款申请信息")].提示内容'),'\u003d (\\d+)',1),
+       json_parse(json_parse_param(x_data,'$..[?(@.查询原因 == "贷款审批" && @.查询日期 > {{1}})]', to_char(FROM_UNIXTIME(o.created_at -30*86400),'yyyy.mm.dd hh:mi:ss')),'$.length()'),
+       json_parse(json_parse_param(x_data,'$..[?(@.查询原因 == "贷款审批" && @.查询日期 > {{1}})]', to_char(FROM_UNIXTIME(o.created_at -90*86400),'yyyy.mm.dd hh:mi:ss')),'$.length()'),
+       json_parse(json_parse_param(x_data,'$..[?(@.查询原因 == "贷款审批" && @.查询日期 > {{1}})]', to_char(FROM_UNIXTIME(o.created_at -180*86400),'yyyy.mm.dd hh:mi:ss')),'$.length()'),
+       json_parse(json_parse_param(x_data,'$..[?(@.查询原因 == "贷后管理" && && @.查询日期 > {{1}})]',to_char(FROM_UNIXTIME(o.created_at-30*86400),'yyyy.mm.dd hh:mi:ss') ),'$.length()'),
+         json_parse(json_parse_param(x_data,'$..[?(@.查询原因 == "贷后管理" && && @.查询日期 > {{1}})]',to_char(FROM_UNIXTIME(o.created_at-90*86400),'yyyy.mm.dd hh:mi:ss') ),'$.length()'),
+         json_parse(json_parse_param(x_data,'$..[?(@.查询原因 == "贷后管理" && && @.查询日期 > {{1}})]',to_char(FROM_UNIXTIME(o.created_at-180*86400),'yyyy.mm.dd hh:mi:ss') ),'$.length()')
+from period_feature1 pf
+left join odps_loan_person p on pf.user_id = p.id
+left join odps_credit_person c on p.id_number = c.id_card and p.phone =c.mobile left join odps_user_loan_order_period o on o.id  = pf.order_id
+left join odps_finance d
+on c.id = d.person_id;
+
+drop table finance_period_feature;
+CREATE TABLE finance_period_feature (
+user_id BIGINT ,
+order_id BIGINT ,
+feature1 STRING COMMENT '保留报告内地址，地址与报告内是否匹配',
+feature2 BIGINT COMMENT '填写地址总个数',
+feature3 BIGINT COMMENT '不同工作单位个数',
+feature4 BOOLEAN COMMENT '是否有配偶联系方式',
+feature5 STRING COMMENT '第一联系人信息是否在通讯录出现',
+feature6 STRING COMMENT '第二联系人信息是否在通讯录出现',
+feature7 BIGINT COMMENT '贷款笔数',
+feature8 BIGINT COMMENT '最大授信额度',
+feature9 BIGINT COMMENT '贷款总额',
+feature10 BIGINT COMMENT '贷款余额',
+feature11 BIGINT COMMENT '协定月还款',
+feature12 BIGINT COMMENT '当前逾期总额',
+feature13 BIGINT COMMENT '最高逾期金额',
+feature14 BIGINT COMMENT '最高逾期期数',
+feature15 BIGINT COMMENT '最近六个月内贷款申请笔数',
+feature16 BIGINT COMMENT '贷款审批近1个月内查询次数',
+feature17 BIGINT COMMENT '贷款审批近3个月内查询次数',
+feature18 BIGINT COMMENT '贷款审批近6个月内查询次数',
+feature19 BIGINT COMMENT '贷后管理近1个月内查询次数',
+feature20 BIGINT COMMENT '贷后管理近3个月内查询次数',
+feature21 BIGINT COMMENT '贷后管理近6个月内查询次数'
+);
+

@@ -1,17 +1,52 @@
+drop table xy_period_feature;
+CREATE TABLE xy_period_feature (
+user_id BIGINT ,
+order_id BIGINT ,
+feature1 BIGINT COMMENT '近1个月贷款机构失败扣款笔数',
+feature2 STRING COMMENT '历史贷款机构失败扣款笔数',
+feature3 BIGINT COMMENT '贷款行为分',
+feature4 BIGINT COMMENT '申请准入分',
+feature5 BIGINT COMMENT '近1个月贷款机构成功扣款笔数',
+feature6 BIGINT COMMENT '贷款已结清订单数',
+feature7 BIGINT COMMENT '历史贷款机构成功扣款笔数',
+feature8 BIGINT COMMENT '贷款逾期订单数（M1）',
+feature9 BIGINT COMMENT '贷款行为置信度',
+feature10 BIGINT COMMENT '建议额度置信度',
+feature11 BIGINT COMMENT '近3个月贷款机构放款笔数',
+feature12 BIGINT COMMENT '近1个月贷款机构放款笔数',
+feature13 BIGINT COMMENT '近6个月贷款机构放款笔数',
+feature14 STRING COMMENT '最近一次贷款放款时间',
+feature15 BIGINT COMMENT '贷款放款总订单数',
+feature16 BIGINT COMMENT '消费金融类机构平均授信额度',
+feature17 BIGINT COMMENT '消费金融类机构最大授信额度',
+feature18 BIGINT COMMENT '网络贷款机构最大授信额度',
+feature19 BIGINT COMMENT '网络贷款机构平均授信额度',
+feature20 BIGINT COMMENT '命中网络贷款机构数',
+feature21 BIGINT COMMENT '命中在用的消费金融类产品数',
+feature22 BIGINT COMMENT '命中在用的消费金融类机构数',
+feature23 BIGINT COMMENT '命中消费金融类机构数',
+feature24 BIGINT COMMENT '命中在用的网络贷款类产品数',
+feature25 BIGINT COMMENT '命中在用的网络贷款类机构数',
+feature26 BIGINT COMMENT '建议授信额度',
+feature27 BIGINT COMMENT '信用贷款时长',
+feature28 BIGINT COMMENT '命中贷款放款机构数',
+feature29 STRING COMMENT '最近一次机构查询时间'
+);
 
-
-
-
-
-
--- 上海资信
---  填写地址总个数
-select json_parse(json_parse(x_data,'$..地址序号'),'$.length()')
- from odps_finance limit 100;
-
--- 是否有配偶联系方式
-select json_parse(json_parse(x_data,'$..地址序号'),'$.length()')
-from odps_finance limit 100;
-
-
---
+insert overwrite table xy_period_feature
+SELECT pf.user_id, pf.order_id, d.`21170015`, d.`21170013`, d.`21170001`
+       , d.`21160001`, d.`21170014`, d.`21170004`, d.`21170012`, d.`21170005`
+       , d.`21170002`,d.`21180002`, d.`21170010`, d.`21170009`, d.`21170011`, d.`21170017`
+       , d.`21170003`, d.`21180010`, d.`21180009`, d.`21180005`, d.`21180006`
+       , d.`21170008`, d.`21180008`, d.`21180007`, d.`21170007`, d.`21180004`
+       , d.`21180003`, d.`21180001`, d.`21170016`, d.`21170006`, d.`21160007`
+FROM period_feature1 pf
+     LEFT OUTER JOIN odps_loan_person p
+     ON pf.user_id = p.id
+     LEFT OUTER JOIN odps_credit_person c
+     ON p.id_number = c.id_card
+        AND p.phone = c.mobile
+     LEFT OUTER JOIN odps_user_loan_order_period o
+     ON o.id = pf.order_id
+     LEFT OUTER JOIN odps_loan_info_type_7_map_flat d
+     ON c.id = d.credit_person_id;

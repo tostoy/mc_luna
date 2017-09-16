@@ -1,9 +1,52 @@
-create table period_featue(
+create table period_feature(
 	user_id BIGINT comment 'user_id',
     order_id BIGINT comment 'order_id',
-    max_overdue_day BIGINT comment '最大逾期天数',
-    loan_times BIGINT comment '借款次数',
+    max_overdue_day BIGINT comment '白卡最大逾期天数',
+    loan_times BIGINT comment '白卡借款次数',
+    overdue_day BIGINT comment '分期卡逾期',
+    overdue_times BIGINT comment '白卡逾期次数',
+    amount BIGINT comment '白卡额度',
+    advance_repay BIGINT comment '提前还款天数'
+);
 
+
+
+CREATE TABLE finance_period_feature (
+user_id BIGINT ,
+order_id BIGINT ,
+feature1 STRING COMMENT '保留报告内地址，地址与报告内是否匹配',
+feature2 BIGINT COMMENT '填写地址总个数',
+feature3 BIGINT COMMENT '不同工作单位个数',
+feature4 BOOLEAN COMMENT '是否有配偶联系方式',
+feature5 BIGINT COMMENT '第一联系人信息是否在通讯录出现',
+feature6 BIGINT COMMENT '第二联系人信息是否在通讯录出现',
+feature7 BIGINT COMMENT '贷款笔数',
+feature8 BIGINT COMMENT '最大授信额度',
+feature9 BIGINT COMMENT '贷款总额',
+feature10 BIGINT COMMENT '贷款余额',
+feature11 BIGINT COMMENT '协定月还款',
+feature12 BIGINT COMMENT '当前逾期总额',
+feature13 BIGINT COMMENT '最高逾期金额',
+feature14 BIGINT COMMENT '最高逾期期数',
+feature15 BIGINT COMMENT '最近六个月内贷款申请笔数',
+feature16 BIGINT COMMENT '贷款审批近1个月内查询次数',
+feature17 BIGINT COMMENT '贷款审批近3个月内查询次数',
+feature18 BIGINT COMMENT '贷款审批近6个月内查询次数',
+feature19 BIGINT COMMENT '贷后管理近1个月内查询次数',
+feature20 BIGINT COMMENT '贷后管理近3个月内查询次数',
+feature21 BIGINT COMMENT '贷后管理近6个月内查询次数'
+);
+CREATE TABLE jd_period_feature (
+user_id BIGINT ,
+order_id BIGINT ,
+feature1 BIGINT COMMENT '京东VIP值',
+feature2 STRING COMMENT '京东等级',
+feature3 BIGINT COMMENT '小白信用分',
+feature4 BIGINT COMMENT '白条总额度',
+feature5 BIGINT COMMENT '白条逾期',
+feature6 BIGINT COMMENT '本人收货地址数',
+feature7 BIGINT COMMENT '本人不同收货地址数',
+feature8 BIGINT COMMENT '近6个月月均消费金额'
 );
 
 drop table odps_finance_period_feature;
@@ -73,6 +116,8 @@ feature7 BIGINT COMMENT '本人不同收货地址数'
 ) PARTITIONED BY (
   pt STRING
   );
+
+
 
 drop table odps_jd_period_feature;
 CREATE TABLE odps_jd_period_feature (
