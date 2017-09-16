@@ -1,4 +1,54 @@
 --name:credit_card_period_feature
 --author:Administrator
 --create time:2017-09-14 20:57
-select
+---credit-card-report---------
+---credit-card-report---------
+---信用卡张数---
+--卡牛+魔蝎--
+select id, get_json_object(result, '$.credit_card_num') from odps_credit_card_report where type='1.0';
+select json_parse(result, '$..active_cards') from odps_credit_card_report where type='2.0';
+
+---信用卡总额度---
+--卡牛+魔蝎--
+select json_parse(json_parse(result,'$.creditCardLst[*].credit_limit'),'$.sum()') from odps_credit_card_report where type='1.0';
+select json_parse(result, '$..total_credit_limit') from odps_credit_card_report where type='2.0';
+
+---单行最高信用额度---
+--卡牛+魔蝎--
+select json_parse(json_parse(result,'$.creditCardLst[*].credit_limit'),'$.max()') from odps_credit_card_report where type='1.0';
+select json_parse(result, '$..max_total_credit_limit') from odps_credit_card_report where type='2.0';
+
+
+---单行最低信用额度---
+--卡牛+魔蝎--
+select json_parse(json_parse(result,'$.creditCardLst[*].credit_limit'),'$.min()') from odps_credit_card_report;
+select json_parse(result, '$..min_total_credit_limit') from odps_credit_card_report where type='2.0';
+
+---利息交易金额---
+--卡牛--
+select json_parse(json_parse(result, '$..transTypeList[?(@.trans_type == "利息交易")].trans_amt'), '$.sum()') from odps_credit_card_report where type='1.0' limit 1;
+
+---分期交易金额---
+--魔蝎--
+select json_parse(result, '$..total_installment_fee_amount') from odps_credit_card_report where type='2.0';
+
+---滞纳金交易金额---
+--卡牛+魔蝎--
+select json_parse(result, '$..total_overdue_fine_amount') from odps_credit_card_report where type='2.0';
+select json_parse(json_parse(result, '$..transTypeList[?(@.trans_type == "滞纳金交易")].trans_amt'), '$.sum()') from odps_credit_card_report where type='1.0' limit 1;
+
+---信用卡账龄---
+--魔蝎--
+select json_parse(result, '$..first_bill_months_from_now') from odps_credit_card_report where type='2.0';
+
+--近12个月取现月数--
+--魔蝎--
+select json_parse(result, '$..total_withdraw_count_l12m') from odps_credit_card_report where type='2.0';
+
+---当月额度使用率---
+---魔蝎---
+select (cast(substr(json_parse(json_parse(result, '$..total_credit_limit'), '$.[0]'), 2, length(json_parse(json_parse(result, '$..total_credit_limit'), '$.[0]')) - 2) as double)-cast(substr(json_parse(json_parse(result, '$..total_aviable_credit_limit'), '$.[0]'), 2, length(json_parse(json_parse(result, '$..total_aviable_credit_limit'), '$.[0]')) - 2) as double))/cast(substr(json_parse(json_parse(result, '$..total_credit_limit'), '$.[0]'), 2, length(json_parse(json_parse(result, '$..total_credit_limit'), '$.[0]')) - 2) as double) from odps_credit_card_report where type='2.0';
+
+---近12个月现金分期笔数---
+---卡牛---
+select json_parse(json_parse(result,'$.lstNetBankOrderDataInfo[?(@.staging_type == 3)]'),'$.length()') from odps_credit_card_report where type='1.0' AND pt='20170914';
