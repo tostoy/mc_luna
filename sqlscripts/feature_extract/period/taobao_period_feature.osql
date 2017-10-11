@@ -1,29 +1,52 @@
-select pf.user_id, pf.order_id,
-        d.growth,
-        d.tianMaoLevel,
-        d.tianMaoExperience,
-        d.tianMaoCreditLevel,
-       json_parse(json_parse_param(d.dealrecord,'$.[?(@.deal_time > {{1}}].sum', to_char(FROM_UNIXTIME(o.created_at -180*86400),'yyyy-mm-dd')),'$.sum()')/6,
-       regexp_count(d.taobaoaddress, ':'),
-       regexp_count(d.taobaoaddress, ':'),
-       d.created_time
- from period_feature1 pf
-left join odps_loan_person p on pf.user_id = p.id
-left join odps_credit_person c on p.id_number = c.id_card and p.phone =c.mobile
-left join odps_user_loan_order_period o on o.id  = pf.order_id
-left join odps_taobao_format_data d  on c.id = d.person_id;
+CREATE TABLE taobao_period_feature_final (
+user_id BIGINT ,
+order_id BIGINT ,
+feature1 STRING COMMENT '成长值',
+feature2 STRING COMMENT '天猫等级',
+feature3 STRING COMMENT '天猫VIP值',
+feature4 STRING COMMENT '天猫信誉',
+feature5 BIGINT COMMENT '近6个月月均消费金额',
+feature6 BIGINT COMMENT '本人收货地址数',
+feature7 BIGINT COMMENT '本人不同收货地址数',
+created_at STRING COMMENT '报告时间',
+rn BIGINT
+);
+insert overwrite table taobao_period_feature_final
+select * from(
+             select *,row_number() over (partition by order_id order by created_at desc ) as rn from taobao_period_feature
+             ) a where a.rn =1;
+
 
 
 drop table taobao_period_feature;
 CREATE TABLE taobao_period_feature (
 user_id BIGINT ,
 order_id BIGINT ,
-feature1 BIGINT COMMENT '成长值',
-feature2 BIGINT COMMENT '天猫等级',
-feature3 BIGINT COMMENT '天猫VIP值',
-feature4 BIGINT COMMENT '天猫信誉',
+feature1 STRING COMMENT '成长值',
+feature2 STRING COMMENT '天猫等级',
+feature3 STRING COMMENT '天猫VIP值',
+feature4 STRING COMMENT '天猫信誉',
 feature5 BIGINT COMMENT '近6个月月均消费金额',
 feature6 BIGINT COMMENT '本人收货地址数',
 feature7 BIGINT COMMENT '本人不同收货地址数',
 created_at STRING COMMENT '报告时间'
 );
+
+
+insert overwrite table taobao_period_feature
+select pf.user_id, pf.order_id,
+        d.growth,
+        d.tianMaoLevel,
+        d.tianMaoExperience,
+        d.tianMaoCreditLevel,
+       json_parse(json_parse_param(d.dealrecord,'$.[?(@.deal_time > {{1}})].sum', to_char(FROM_UNIXTIME(o.created_at -180*86400),'yyyy-mm-dd')),'$.sum()')/6,
+       regexp_count(d.taobaoaddress, ':'),
+       regexp_count(d.taobaoaddress, ':'),
+       d.created_time
+from period_feature1 pf
+left join odps_loan_person p on pf.user_id = p.id
+left join odps_credit_person c on p.id_number = c.id_card and p.phone =c.mobile
+left join odps_user_loan_order_period o on o.id  = pf.order_id
+left join odps_taobao_format_data d  on c.id = d.person_id;
+
+

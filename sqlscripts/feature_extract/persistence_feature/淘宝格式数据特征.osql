@@ -1,0 +1,34 @@
+drop TABLE order_feature_taobao_format_data;
+CREATE TABLE order_feature_taobao_format_data (
+user_id BIGINT,
+order_id BIGINT,
+ref_id STRING,
+feature1 STRING COMMENT '成长值',
+feature2 STRING COMMENT '天猫等级',
+feature3 STRING COMMENT '天猫VIP值',
+feature4 STRING COMMENT '天猫信誉',
+feature5 BIGINT COMMENT '近6个月月均消费金额',
+feature6 BIGINT COMMENT '本人收货地址数',
+feature7 BIGINT COMMENT '本人不同收货地址数'
+)partitioned by(
+ pt STRING
+ );
+insert overwrite table order_feature_taobao_format_data partition(pt)
+select pf.user_id,pf.id, d.id,
+       d.growth,
+       d.tianMaoLevel,
+       d.tianMaoExperience,
+       d.tianMaoCreditLevel,
+       json_parse(json_parse_param(d.dealrecord,'$.[?(@.deal_time > {{1}})].sum', to_char(FROM_UNIXTIME(pf.created_at -180*86400),'yyyy-mm-dd')),'$.sum()')/6,
+       regexp_count(d.taobaoaddress, ':'),
+       regexp_count(d.taobaoaddress, ':'),
+       pf.pt
+from odps_user_loan_order pf
+     left join odps_loan_person p on pf.user_id = p.id
+     left join odps_credit_person c on p.id_number = c.id_card and p.phone =c.mobile
+     left join (
+               select * from(
+                            select *,row_number() over (partition by person_id order by created_time desc ) as rn from odps_taobao_format_data
+                            ) a where a.rn =1
+               ) d on c.id = d.person_id
+where pf.pt < 20170920;

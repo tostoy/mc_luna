@@ -21,13 +21,13 @@ type STRING COMMENT '报告类型, 1.0: 卡牛 2.0:魔蝎'
 
 
 insert overwrite table order_feature_credit_card partition(pt)
-SELECT pf.user_id, pf.order_id, d.id
+SELECT pf.user_id, pf.id, d.id
        , CASE d.type
          WHEN '1.0' THEN json_parse(json_parse(result, '$..transTypeList[?(@.trans_type == "滞纳金交易")].trans_amt'), '$.sum()')
          WHEN '2.0' THEN REGEXP_EXTRACT(json_parse(result, '$[0].interest_fee_information.total_overdue_fine_amount'),'"(.*?)"')
          END
        , CASE d.type
-         WHEN '1.0' THEN  datediff(FROM_UNIXTIME(o.created_at), TO_DATE(if(json_parse(json_parse(result, '$..month'),'$.strmin()') == "null", null,json_parse(json_parse(result, '$..month'),'$.strmin()')),'"yyyymm"'), 'mm')
+         WHEN '1.0' THEN  datediff(FROM_UNIXTIME(pf.created_at), TO_DATE(if(json_parse(json_parse(result, '$..month'),'$.strmin()') == "null", null,json_parse(json_parse(result, '$..month'),'$.strmin()')),'"yyyymm"'), 'mm')
          WHEN '2.0' THEN REGEXP_EXTRACT(json_parse(result, '$[0].user_basic_information.first_bill_months_from_now'),'"(.*?)"')
          END
        , CASE d.type

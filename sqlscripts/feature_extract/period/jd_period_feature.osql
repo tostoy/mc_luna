@@ -1,12 +1,52 @@
+CREATE TABLE jd_period_feature_final(
+user_id BIGINT ,
+order_id BIGINT ,
+feature1 BIGINT COMMENT '京东VIP值',
+feature2 STRING COMMENT '京东等级',
+feature3 BIGINT COMMENT '小白信用分',
+feature4 BIGINT COMMENT '白条总额度',
+feature5 BIGINT COMMENT '白条逾期',
+feature6 BIGINT COMMENT '本人收货地址数',
+feature7 BIGINT COMMENT '本人不同收货地址数',
+feature8 BIGINT COMMENT '近6个月月均消费金额',
+created_at STRING   COMMENT '报告时间',
+rn BIGINT
+);
+
+insert overwrite table jd_period_feature_final
+select * from(
+             select *,row_number() over (partition by order_id order by created_at desc ) as rn from jd_period_feature
+             ) a where a.rn =1;
+
+
+
+drop TABLE jd_period_feature;
+CREATE TABLE jd_period_feature (
+user_id BIGINT ,
+order_id BIGINT ,
+feature1 BIGINT COMMENT '京东VIP值',
+feature2 STRING COMMENT '京东等级',
+feature3 BIGINT COMMENT '小白信用分',
+feature4 BIGINT COMMENT '白条总额度',
+feature5 BIGINT COMMENT '白条逾期',
+feature6 BIGINT COMMENT '本人收货地址数',
+feature7 BIGINT COMMENT '本人不同收货地址数',
+feature8 BIGINT COMMENT '近6个月月均消费金额',
+created_at STRING   COMMENT '报告时间'
+);
+
+
+
 INSERT OVERWRITE TABLE jd_period_feature
 SELECT pf.user_id, pf.order_id, get_json_object(x_data, '$.userinfo.vip_count')
        , get_json_object(x_data, '$.userinfo.vip_level')
        , get_json_object(x_data, '$.userinfo.vip_count')
        , get_json_object(x_data, '$.wealth.credit_limit')
        , get_json_object(x_data, '$.wealth.delinquency_balance')
-       , json_parse(x_data, '$.deliveraddresses.length()'),
-       , json_parse(x_data, '$.deliveraddresses.length()'),
-       , json_parse(json_parse_param(x_data, '$..tradedetails.tradedetails[?(@.trade_time > {{1}})].amount', to_char(FROM_UNIXTIME(o.created_at - 180 * 86400), 'yyyy-mm-ddThh:mi:ss')), '$.sum()') / 6
+       , json_parse(x_data, '$.deliveraddresses.length()')
+       , json_parse(x_data, '$.deliveraddresses.length()')
+       , json_parse(json_parse_param(x_data, '$..tradedetails.tradedetails[?(@.trade_time > {{1}})].amount', to_char(FROM_UNIXTIME(o.created_at - 180 * 86400), 'yyyy-mm-ddThh:mi:ss')), '$.sum()') / 6,
+       d.create_time
 FROM period_feature1 pf
      LEFT OUTER JOIN odps_loan_person p
      ON pf.user_id = p.id

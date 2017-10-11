@@ -62,48 +62,6 @@ from conform_period_order b left join conform_period_order_1 a on a.id =b.id
 
 
 
-CREATE TABLE conform_period_order_final (
-id BIGINT,
-list_no BIGINT,
-success_no BIGINT,
-last_order_id BIGINT,
-last_order_apply_interval BIGINT,
-last_order_cardtype BIGINT,
-last_sucess_order_id BIGINT,
-last_success_order_apply_interval BIGINT,
-last_success_order_repay_interval BIGINT,
-last_success_order_cardtype BIGINT,
-apply_times BIGINT,
-order_times BIGINT,
-repay_times BIGINT,
-normal_repay_times BIGINT,
-overdue_day BIGINT,
-repay_in_advance BIGINT
-);
-
-insert overwrite table conform_period_order_final
-select  a.id,
-        COALESCE(a.apply_times,0) +  COALESCE(b.apply_times,0) + 1,
-        COALESCE(a.success_no, 0) + COALESCE(b.success_no,0),
-        if(o.created_at < po.created_at or o.created_at is null , a.last_order_id, b.last_order_id ),
-        if(o.created_at < po.created_at or o.created_at is null, a.last_order_apply_interval, b.last_order_apply_interval ),
-        if(o.created_at < po.created_at or o.created_at is null, a.last_order_cardtype, b.last_order_cardtype ),
-        if(o_s.created_at < po_s.created_at or o_s.created_at is null, a.last_sucess_order_id, b.last_sucess_order_id ),
-        if(o_s.created_at < po_s.created_at or o_s.created_at is null, a.last_success_order_apply_interval, b.last_success_order_apply_interval ),
-        if(o_s.created_at < po_s.created_at or o_s.created_at is null, a.last_success_order_repay_interval, b.last_success_order_repay_interval ),
-        if(o_s.created_at < po_s.created_at or o_s.created_at is null, a.last_success_order_cardtype, b.last_success_order_cardtype ),
-        COALESCE(a.apply_times,0) +  COALESCE(b.apply_times,0),
-        COALESCE(a.order_times,0) +  COALESCE(b.order_times,0),
-        COALESCE(a.repay_times,0) +  COALESCE(b.repay_times,0),
-        COALESCE(a.normal_repay_times,0) +  COALESCE(b.normal_repay_times,0),
-        a.overdue_day,
-        a.repay_in_advance
-from conform_period_order b left join conform_period_order_1 a on a.id =b.id
-left join odps_user_loan_order o on a.last_order_id =o.id
-left join odps_user_loan_order_period po on b.last_order_id =po.id
-left join odps_user_loan_order o_s on a.last_sucess_order_id =o_s.id
-left join odps_user_loan_order_period po_s on b.last_sucess_order_id =po_s.id;
-
 
 drop table conform_period_order_1;
 CREATE TABLE conform_period_order_1 (
@@ -250,7 +208,7 @@ select a.id, a.user_id, a.created_at, a.card_type, a.status,
        COALESCE(p_order_2.row_num,0),
        COALESCE(p_order_3.row_num,0),
        COALESCE(p_order_4.row_num,0),row_number() over(partition by a.user_id order by a.created_at) as order_rn
-from odps_user_loan_order a left join p_order_1 on a.id =p_order_1.id left join p_order_2 on a.id =p_order_2.id
+from odps_user_loan_order_period a left join p_order_1 on a.id =p_order_1.id left join p_order_2 on a.id =p_order_2.id
      left join p_order_3 on a.id =p_order_3.id left join p_order_4 on a.id =p_order_4.id;
 
 -- 申请次数列表
