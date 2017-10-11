@@ -22,7 +22,7 @@ public class PhoneUDTF extends UDTF {
     @Override
     public void process(Object[] args) throws UDFException {
         // TODO
-        int a = (Integer) args[1];
+        Long a = (Long) args[1];
         String b = (String) args[0];
         String c="";
         List<Integer> call_in_cnt= null;
