@@ -1,0 +1,98 @@
+ insert overwrite  table rmdc_dw_test1.temp_xkx_1011_2 
+ SELECT phone_udtf2(x_data,b.user_id) as (c0, c1)
+FROM odps_credit_jxl_data  a
+INNER JOIN
+  (
+  SELECT person_id,c.user_id
+   FROM user_id_to_person_id  c
+   INNER JOIN
+     (SELECT DISTINCT user_id
+      FROM odps_user_loan_order_repayment 
+      WHERE overdue_day>30
+        AND created_at >= unix_timestamp("2017-04-01 00:00:00")
+        AND created_at < unix_timestamp("2017-10-01 00:00:00"))  d
+  ON c.user_id = d.user_id
+  )  b ON  a.person_id = cast(b.person_id as STRING)  
+  
+
+select count(1)  from  rmdc_dw_test1.temp_xkx_1011
+
+
+SELECT count(DISTINCT user_id)
+      FROM odps_user_loan_order_repayment 
+      WHERE overdue_day>30
+        AND created_at >= unix_timestamp("2017-04-01 00:00:00")
+        AND created_at < unix_timestamp("2017-10-01 00:00:00")
+		
+create table rmdc_dw_test1.temp_xkx_1012final as		
+select b.c0, if(t1.c1 is null,0, 1 ),
+if(t2.c1 is null,0, 1 ), if(t3.c1 is null,0, 1 ), 
+if(t4.c1 is null,0, 1 ),
+if(t5.c1 is null,0, 1 ) from	(	
+select distinct(c0) from (		
+select c0 from rmdc_dw_test1.temp_xkx_1011 
+union 
+select c0 from  rmdc_dw_test1.temp_xkx_1011_2
+union
+select c0 from  rmdc_dw_test1.temp_xkx_1012
+union
+select c0 from  rmdc_dw_test1.temp_xkx_1012_2
+union
+select c0 from  rmdc_dw_test1.temp_xkx_1012_3
+) a )b 
+left join  rmdc_dw_test1.temp_xkx_1011 t1 on b.c0 = t1.c0
+left join  rmdc_dw_test1.temp_xkx_1011_2 t2 on b.c0 = t2.c0
+left join  rmdc_dw_test1.temp_xkx_1012 t3 on b.c0 = t3.c0
+left join  rmdc_dw_test1.temp_xkx_1012_2 t4 on b.c0 = t4.c0
+left join  rmdc_dw_test1.temp_xkx_1012_3 t5 on b.c0 = t5.c0 and t5.c1 >= 10
+
+
+create table rmdc_dw_test1.temp_xkx_1012final_2 as 
+select c0, max(_c1), max(_c2), max(_c3), max(_c4), max(_c5) from rmdc_dw_test1.temp_xkx_1012final group by c0
+
+
+
+
+
+
+
+ insert overwrite  table rmdc_dw_test1.temp_xkx_1011
+ SELECT phone_udtf(x_data,b.user_id) as (c0, c1)
+FROM odps_credit_jxl_data  a
+INNER JOIN
+  (
+  SELECT person_id,c.user_id
+   FROM user_id_to_person_id  c
+   INNER JOIN
+     (SELECT DISTINCT user_id
+      FROM odps_user_loan_order_repayment
+      WHERE overdue_day>30
+        AND created_at >= unix_timestamp("2017-04-01 00:00:00")
+        AND created_at < unix_timestamp("2017-10-01 00:00:00"))  d
+  ON c.user_id = d.user_id
+  )  b ON  a.person_id = cast(b.person_id as STRING)
+
+drop table   rmdc_dw_test1.temp_xkx_1012_2
+create table rmdc_dw_test1.temp_xkx_1012_2 as
+ select a.c0,a.c1 from ( select c0, count(distinct c1) as c1 from rmdc_dw_test1.temp_xkx_1011_2 group by c0 ) a where  a.c1 >=3
+ create table rmdc_dw_test1.temp_xkx_1012_3 as
+ select to_char(from_unixtime(c2),"yyyymm" ),c0, count(distinct c1) as c1 from rmdc_dw_test1.temp_xkx_1011_3 group by  to_char(from_unixtime(c2),"yyyymm" ),c0
+
+
+
+ insert overwrite table rmdc_dw_test1.temp_xkx_1011_3
+ SELECT phone_udtf3(x_data,b.user_id, b.created_at) as (c0, c1, c2)
+FROM odps_credit_jxl_data  a
+INNER JOIN
+  (
+  SELECT person_id,c.user_id,created_at
+   FROM user_id_to_person_id  c
+   INNER JOIN
+     (SELECT user_id, min(created_at) as created_at
+      FROM odps_user_loan_order_repayment
+      WHERE overdue_day>30
+        AND created_at >= unix_timestamp("2017-04-01 00:00:00")
+        AND created_at < unix_timestamp("2017-10-01 00:00:00") group by user_id)  d
+  ON c.user_id = d.user_id
+  )  b ON  a.person_id = cast(b.person_id as STRING)
+
