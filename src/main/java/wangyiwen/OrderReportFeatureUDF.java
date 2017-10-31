@@ -11,8 +11,8 @@ import java.util.*;
 
 @Resolve({"string,string,string,string,string,string,string,string->string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string"})
 
-
-        public static int count = 846;
+public class OrderReportFeatureUDF extends UDTF {
+    public static int count = 846;
 
     @Override
     public void setup(ExecutionContext ctx) throws UDFException {
