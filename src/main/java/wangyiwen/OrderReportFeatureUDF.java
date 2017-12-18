@@ -9,10 +9,11 @@ import com.jayway.jsonpath.ReadContext;
 
 import java.util.*;
 
-@Resolve({"string,string,string,string,string,string,string,string->string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string"})
+@Resolve({"string,string,string,string,string,string,string,string->string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string," +
+        "string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string,string"})
 
 public class OrderReportFeatureUDF extends UDTF {
-    public static int count = 876;
+    public static int count = 906;
 
     @Override
     public void setup(ExecutionContext ctx) throws UDFException {
@@ -40,7 +41,9 @@ public class OrderReportFeatureUDF extends UDTF {
                 feature[23],feature[24],feature[62],feature[63],feature[64],feature[65],feature[66],feature[67],feature[68],
                 feature[700],feature[701],feature[703],feature[704],feature[706],feature[707],feature[72],feature[73],feature[75],
                 feature[847],feature[848],feature[850],feature[851],feature[853],feature[854],feature[855],feature[856],feature[857],
-                feature[858],feature[859],feature[860],feature[861],feature[862],feature[863],feature[864],feature[865],feature[339],feature[873],feature[874],feature[875],args[7]);
+                feature[858],feature[859],feature[860],feature[861],feature[862],feature[863],feature[864],feature[865],feature[339],feature[873],feature[874],feature[875],feature[261],
+                feature[165],feature[204],feature[887],feature[888],feature[889],feature[890],feature[891],feature[892],feature[893],feature[894],feature[895],feature[896],feature[897],feature[898],feature[899],feature[900],feature[901],feature[902],feature[903],feature[904],feature[905],feature[906],
+                args[7]);
     }
 
     @Override
