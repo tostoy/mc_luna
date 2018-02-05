@@ -10,7 +10,7 @@ package myudf.featureUDTF;
 
 // TODO define input and output types, e.g. "string,string->string,bigint".
 @Resolve({"string,string,string->string,string,string,string,string,string,string"})
-public class contact_records_flat extends UDTF{
+public class ContactRecordsFlat extends UDTF{
 
     @Override
     public void setup(ExecutionContext ctx) throws UDFException {
@@ -19,7 +19,7 @@ public class contact_records_flat extends UDTF{
 
     @Override
     public void process(Object[] args) throws UDFException {
-        //select id,user_id,x_data
+        //id,user_id,x_data
         String id = (String) args[0];
         String user_id = (String) args[1];
         String x_data = (String) args[2];
