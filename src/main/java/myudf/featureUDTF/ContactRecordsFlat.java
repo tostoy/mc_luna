@@ -44,7 +44,11 @@ public class ContactRecordsFlat extends UDTF {
                 date = JsonPath.read(item,"$.date");
                 duration = JsonPath.read(item,"$.duration");
                 name = JsonPath.read(item,"$.name");
-                phone_num = JsonPath.read(item,"$.phone_num");
+                try {
+                    phone_num = JsonPath.read(item, "$.phone_num");
+                }catch (Exception e) {
+                    phone_num = "未知号码";
+                }
                 call_type = JsonPath.read(item,"$.type");
                 forward(id, user_id, date, duration, name, phone_num, call_type, created_at, updated_at, type);
             }
