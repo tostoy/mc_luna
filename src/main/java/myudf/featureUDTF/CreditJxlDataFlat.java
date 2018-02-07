@@ -22,7 +22,7 @@ public class CreditJxlDataFlat extends UDTF {
     @Override
     public void process(Object[] args) throws UDFException {
         //id,person_id,credit_person_id,created_time,x_data,collect_token,updated_time
-        //id,person_id,credit_person_id,created_time,phone_num, contact_name, call_in_cnt, call_out_cnt, call_cnt ,collect_token,updated_time
+            //id,person_id,credit_person_id,created_time,phone_num, contact_name, call_in_cnt, call_out_cnt, call_cnt ,collect_token,updated_time
 
         String id = (String) args[0];
         String person_id = (String) args[1];
@@ -50,7 +50,7 @@ public class CreditJxlDataFlat extends UDTF {
                 } catch (Exception e) {
                     phone_num = "未知号码";
                 }
-                forward(id,person_id,credit_person_id,created_time,phone_num, contact_name, call_in_cnt, call_out_cnt, call_cnt ,collect_token,updated_time);
+                forward(id,person_id,credit_person_id,created_time,phone_num, contact_name, Long.valueOf(call_in_cnt), Long.valueOf(call_out_cnt), Long.valueOf(call_cnt),collect_token,updated_time);
             }
         }
     }
